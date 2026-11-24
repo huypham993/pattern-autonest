@@ -1,0 +1,492 @@
+{
+ "schema": "autonest.placement/1",
+ "engine": {
+  "name": "autonest",
+  "version": "0.4.0",
+  "solver": "nfp-bottom-left",
+  "quality": "balanced",
+  "collision_shape": "envelope (+) disk(spacing/2 + 0.002 mm), outer-simplified 0.2 mm"
+ },
+ "source": {
+  "geometry_sha256": "e166496c6e15817d782510316df7a894490c3f2ec50376f91ad8c9d5ddada729",
+  "document": {
+   "name": "04_clip_raster.ai",
+   "path": "C:\\mock/04_clip_raster.ai",
+   "ruler_units": "Millimeters",
+   "color_space": "CMYK"
+  },
+  "artboard": {
+   "index": 0,
+   "name": "Artboard 1",
+   "rect_pt": [
+    0,
+    0,
+    1984.252,
+    -1417.3228
+   ]
+  }
+ },
+ "transform_convention": {
+  "space": "illustrator_document",
+  "units": "pt",
+  "y_axis": "up",
+  "rotation": "counter_clockwise_degrees",
+  "formula": "p' = target + R(theta) * F * (p - pivot)"
+ },
+ "status": "partial",
+ "settings": {
+  "spacing_mm": 5.0,
+  "margin_mm": 10.0,
+  "curve_tolerance_mm": 0.25,
+  "conservative_curves": true,
+  "rotation": {
+   "preset": "step",
+   "step_deg": 5.0,
+   "custom_angles_deg": [],
+   "allow_full_360": true,
+   "max_abs_deg": 180.0,
+   "prefer_original": true,
+   "grain_lock": false,
+   "allow_mirror": false
+  },
+  "optimization": {
+   "quality": "balanced",
+   "time_limit_s": 60.0,
+   "max_iterations": null,
+   "seed": 1
+  },
+  "material": {
+   "mode": "fixed_artboard",
+   "roll_max_length_mm": null
+  },
+  "part_in_hole": true,
+  "opaque_policy": "cut_line"
+ },
+ "placements": [
+  {
+   "id": "g001",
+   "uuid": "1071",
+   "name": "clip_circle_raster",
+   "rotation_deg": 20.0,
+   "mirror": false,
+   "pivot_pt": [
+    170.07874,
+    -1247.24406
+   ],
+   "target_pt": [
+    1082.102457,
+    -1274.974265
+   ],
+   "matrix": [
+    0.939692620786,
+    0.342020143326,
+    -0.342020143326,
+    0.939692620786,
+    495.698127906146,
+    -161.118580530392
+   ],
+   "expected_trackers_pt": [
+    [
+     1188.650327,
+     -1236.194054
+    ],
+    [
+     975.554634,
+     -1313.754544
+    ]
+   ],
+   "pivot_mm": [
+    60.0,
+    60.0
+   ],
+   "target_mm": [
+    381.7417,
+    50.2174
+   ],
+   "expected_bounds_mm": [
+    341.7756,
+    10.2513,
+    421.7078,
+    90.1835
+   ]
+  },
+  {
+   "id": "g002",
+   "uuid": "1072",
+   "name": "clip_ring_placed",
+   "rotation_deg": 20.0,
+   "mirror": false,
+   "pivot_pt": [
+    566.929134,
+    -1247.24406
+   ],
+   "target_pt": [
+    1338.590835,
+    -1260.813225
+   ],
+   "matrix": [
+    0.939692620786,
+    0.342020143326,
+    -0.342020143326,
+    0.939692620786,
+    379.269119108366,
+    -282.688369165121
+   ],
+   "expected_trackers_pt": [
+    [
+     1458.457162,
+     -1217.185493
+    ],
+    [
+     1218.724566,
+     -1304.441022
+    ]
+   ],
+   "pivot_mm": [
+    200.0,
+    60.0
+   ],
+   "target_mm": [
+    472.2251,
+    55.2131
+   ],
+   "expected_bounds_mm": [
+    427.2632,
+    10.2512,
+    517.187,
+    100.175
+   ]
+  },
+  {
+   "id": "g004",
+   "uuid": "1074",
+   "name": "raster_with_outline",
+   "rotation_deg": 90.0,
+   "mirror": false,
+   "pivot_pt": [
+    1303.937008,
+    -1243.700753
+   ],
+   "target_pt": [
+    172.916787,
+    -1250.98891
+   ],
+   "matrix": [
+    0.0,
+    1.0,
+    -1.0,
+    0.0,
+    -1070.783966,
+    -2554.925918
+   ],
+   "expected_trackers_pt": [
+    [
+     304.019134,
+     -1378.547918
+    ],
+    [
+     48.901034,
+     -1123.429818
+    ]
+   ],
+   "pivot_mm": [
+    460.0,
+    61.25
+   ],
+   "target_mm": [
+    61.0012,
+    58.6789
+   ],
+   "expected_bounds_mm": [
+    10.2512,
+    10.2512,
+    111.7512,
+    107.1066
+   ]
+  },
+  {
+   "id": "g005",
+   "uuid": "1075",
+   "name": "covered_opaque",
+   "rotation_deg": 240.0,
+   "mirror": false,
+   "pivot_pt": [
+    1712.435244,
+    -1222.694753
+   ],
+   "target_pt": [
+    829.482803,
+    -1267.098202
+   ],
+   "matrix": [
+    -0.5,
+    -0.866025403784,
+    0.866025403784,
+    -0.5,
+    2744.58514217194,
+    -395.433154860197
+   ],
+   "expected_trackers_pt": [
+    [
+     754.60981,
+     -1388.976335
+    ],
+    [
+     978.51428,
+     -1188.035619
+    ]
+   ],
+   "pivot_mm": [
+    604.1091,
+    68.66045
+   ],
+   "target_mm": [
+    292.6231,
+    52.9959
+   ],
+   "expected_bounds_mm": [
+    237.6362,
+    10.0,
+    345.1981,
+    110.4713
+   ]
+  },
+  {
+   "id": "g006",
+   "uuid": "1076",
+   "name": "clip_bigger_than_content",
+   "rotation_deg": 90.0,
+   "mirror": false,
+   "pivot_pt": [
+    226.771654,
+    -708.661383
+   ],
+   "target_pt": [
+    1723.299874,
+    -1331.571367
+   ],
+   "matrix": [
+    0.0,
+    1.0,
+    -1.0,
+    0.0,
+    1014.638491,
+    -1558.343021
+   ],
+   "expected_trackers_pt": [
+    [
+     1723.299891,
+     -1161.492621
+    ],
+    [
+     1723.299891,
+     -1501.650121
+    ]
+   ],
+   "pivot_mm": [
+    80.0,
+    250.0
+   ],
+   "target_mm": [
+    607.9419,
+    30.2512
+   ],
+   "expected_bounds_mm": [
+    587.9419,
+    10.2512,
+    627.9419,
+    50.2512
+   ]
+  },
+  {
+   "id": "g007",
+   "uuid": "1078",
+   "name": "nested_clip",
+   "rotation_deg": 5.0,
+   "mirror": false,
+   "pivot_pt": [
+    718.58452,
+    -708.661383
+   ],
+   "target_pt": [
+    497.147811,
+    -1283.623335
+   ],
+   "matrix": [
+    0.996194698092,
+    0.087155742748,
+    -0.087155742748,
+    0.996194698092,
+    -280.46618714675,
+    -640.287390080606
+   ],
+   "expected_trackers_pt": [
+    [
+     529.620353,
+     -1280.782373
+    ],
+    [
+     331.95022,
+     -1298.076268
+    ]
+   ],
+   "pivot_mm": [
+    253.50065,
+    250.0
+   ],
+   "target_mm": [
+    175.3827,
+    47.1662
+   ],
+   "expected_bounds_mm": [
+    117.1047,
+    10.2512,
+    234.531,
+    79.9848
+   ]
+  },
+  {
+   "id": "g008",
+   "uuid": "1079",
+   "name": "outline_too_small",
+   "rotation_deg": 0.0,
+   "mirror": false,
+   "pivot_pt": [
+    1190.551181,
+    -751.181068
+   ],
+   "target_pt": [
+    1566.318898,
+    -1318.110202
+   ],
+   "matrix": [
+    1.0,
+    0.0,
+    -0.0,
+    1.0,
+    375.767717,
+    -566.929134
+   ],
+   "expected_trackers_pt": [
+    [
+     1452.933117,
+     -1417.322834
+    ],
+    [
+     1736.397617,
+     -1190.551134
+    ]
+   ],
+   "pivot_mm": [
+    420.0,
+    235.0
+   ],
+   "target_mm": [
+    552.5625,
+    35.0
+   ],
+   "expected_bounds_mm": [
+    522.5625,
+    10.0,
+    582.5625,
+    60.0
+   ]
+  }
+ ],
+ "unplaced": [
+  {
+   "id": "g003",
+   "reason": "INVALID_GEOMETRY",
+   "detail": "NEEDS_NEST_OUTLINE"
+  },
+  {
+   "id": "g009",
+   "reason": "INVALID_GEOMETRY",
+   "detail": "NEEDS_NEST_OUTLINE"
+  }
+ ],
+ "metrics": {
+  "total_groups": 9,
+  "placed": 7,
+  "unplaced": 2,
+  "used_length_mm": 100.471,
+  "utilization": 0.10417,
+  "utilization_used_height": 0.49767,
+  "placed_area_mm2": 34000.805,
+  "min_gap_mm": 5.095698,
+  "collisions": 0,
+  "boundary_violations": 0,
+  "elapsed_s": 3.224,
+  "seed": 1,
+  "nfp_computed": 964,
+  "nfp_cache_hits": 881,
+  "restarts": [
+   {
+    "order": "area_desc",
+    "placed": 7,
+    "top_mm": 110.471,
+    "timed_out": false
+   },
+   {
+    "order": "longest_side_desc",
+    "placed": 7,
+    "top_mm": 110.471,
+    "timed_out": false
+   },
+   {
+    "order": "area_desc_fine",
+    "placed": 7,
+    "top_mm": 110.471,
+    "timed_out": false
+   },
+   {
+    "order": "perturb_3_fine",
+    "placed": 7,
+    "top_mm": 110.471,
+    "timed_out": false
+   },
+   {
+    "order": "perturb_4_fine",
+    "placed": 7,
+    "top_mm": 110.471,
+    "timed_out": false
+   },
+   {
+    "order": "perturb_5_fine",
+    "placed": 7,
+    "top_mm": 110.471,
+    "timed_out": false
+   }
+  ]
+ },
+ "verification": {
+  "ok": true,
+  "verifier": "autonest.verify (shapely/GEOS exact predicates, independent of the solver)",
+  "geometry_sha256": "e166496c6e15817d782510316df7a894490c3f2ec50376f91ad8c9d5ddada729",
+  "placed": 7,
+  "unplaced": 2,
+  "collisions": 0,
+  "spacing_violations": 0,
+  "boundary_violations": 0,
+  "rigidity_violations": 0,
+  "min_gap_mm": 5.095698,
+  "min_gap_pair": [
+   "g001",
+   "g005"
+  ],
+  "pairs_checked": 6,
+  "spacing_mm": 5.0,
+  "usable_mm": [
+   10.0,
+   10.0,
+   690.0,
+   490.0
+  ],
+  "tolerances": {
+   "boundary_mm": 0.001,
+   "spacing_mm": 1e-06
+  },
+  "problems": [],
+  "notes": []
+ }
+}

@@ -1,0 +1,66 @@
+{
+ "global": {},
+ "groups": {
+  "g001": {
+   "status": "ok",
+   "source": "clip_path",
+   "codes": [
+    "CLIP_BOUNDS_OPAQUE_CONTENT"
+   ],
+   "name": "clip_circle_raster"
+  },
+  "g002": {
+   "status": "ok",
+   "source": "clip_path",
+   "codes": [
+    "HAS_HOLES"
+   ],
+   "name": "clip_ring_placed"
+  },
+  "g003": {
+   "status": "error",
+   "codes": [
+    "NEEDS_NEST_OUTLINE"
+   ],
+   "name": "raster_only"
+  },
+  "g004": {
+   "status": "ok",
+   "source": "nest_outline",
+   "name": "raster_with_outline"
+  },
+  "g005": {
+   "status": "ok",
+   "source": "vector_union",
+   "codes": [
+    "OPAQUE_COVERED"
+   ],
+   "name": "covered_opaque"
+  },
+  "g006": {
+   "status": "ok",
+   "source": "clip_path",
+   "name": "clip_bigger_than_content"
+  },
+  "g007": {
+   "status": "ok",
+   "source": "vector_union",
+   "name": "nested_clip"
+  },
+  "g008": {
+   "status": "warning",
+   "source": "nest_outline",
+   "codes": [
+    "OUTLINE_SMALLER_THAN_ARTWORK"
+   ],
+   "name": "outline_too_small"
+  },
+  "g009": {
+   "status": "error",
+   "codes": [
+    "NEEDS_NEST_OUTLINE"
+   ],
+   "name": "text_only"
+  }
+ }
+}

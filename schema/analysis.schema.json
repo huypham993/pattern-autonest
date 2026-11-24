@@ -1,0 +1,62 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "autonest.analysis/1",
+  "title": "Illustrator Auto Nesting - geometry analysis (engine -> UI)",
+  "type": "object",
+  "required": ["schema", "source", "frame", "settings", "summary", "issues", "parts"],
+  "properties": {
+    "schema": {"const": "autonest.analysis/1"},
+    "frame": {
+      "type": "object",
+      "required": ["units", "origin", "y_axis", "artboard_mm", "usable_mm"],
+      "properties": {
+        "units": {"const": "mm"},
+        "origin": {"const": "artboard_bottom_left"},
+        "y_axis": {"const": "up"}
+      }
+    },
+    "summary": {
+      "type": "object",
+      "required": ["total_groups", "ok", "warning", "error", "nestable"]
+    },
+    "issues": {"type": "array", "items": {"$ref": "#/definitions/issue"}},
+    "parts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "status", "source", "metrics", "issues", "silhouette"],
+        "properties": {
+          "id": {"type": "string"},
+          "status": {"enum": ["ok", "warning", "error"]},
+          "source": {"type": "string"},
+          "issues": {"type": "array", "items": {"$ref": "#/definitions/issue"}},
+          "silhouette": {"$ref": "#/definitions/polygons"},
+          "envelope": {"anyOf": [{"$ref": "#/definitions/polygons"}, {"type": "null"}]}
+        }
+      }
+    }
+  },
+  "definitions": {
+    "issue": {
+      "type": "object",
+      "required": ["code", "severity", "message"],
+      "properties": {
+        "code": {"type": "string"},
+        "severity": {"enum": ["error", "warning", "info"]},
+        "message": {"type": "string"}
+      }
+    },
+    "ring": {"type": "array", "items": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "number"}}},
+    "polygons": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["exterior", "holes"],
+        "properties": {
+          "exterior": {"$ref": "#/definitions/ring"},
+          "holes": {"type": "array", "items": {"$ref": "#/definitions/ring"}}
+        }
+      }
+    }
+  }
+}

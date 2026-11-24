@@ -1,0 +1,237 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "autonest.geometry/1",
+  "title": "Illustrator Auto Nesting - geometry export (Illustrator -> engine)",
+  "type": "object",
+  "required": ["schema", "coordinate_system", "artboard", "groups"],
+  "properties": {
+    "schema": {"const": "autonest.geometry/1"},
+    "generator": {
+      "type": "object",
+      "properties": {
+        "name": {"type": "string"},
+        "version": {"type": "string"},
+        "illustrator_version": {"type": ["string", "null"]},
+        "exported_at": {"type": "string"}
+      }
+    },
+    "document": {
+      "type": "object",
+      "properties": {
+        "name": {"type": "string"},
+        "path": {"type": ["string", "null"]},
+        "ruler_units": {"type": "string"},
+        "color_space": {"type": "string"}
+      }
+    },
+    "coordinate_system": {
+      "type": "object",
+      "required": ["units", "y_axis"],
+      "properties": {
+        "space": {"const": "illustrator_document"},
+        "units": {"const": "pt"},
+        "y_axis": {"enum": ["up", "down"]}
+      }
+    },
+    "artboard": {
+      "type": "object",
+      "required": ["rect_pt"],
+      "properties": {
+        "index": {"type": "integer", "minimum": 0},
+        "name": {"type": "string"},
+        "rect_pt": {"$ref": "#/definitions/rect"}
+      }
+    },
+    "settings": {"$ref": "#/definitions/settings"},
+    "groups": {"type": "array", "items": {"$ref": "#/definitions/selectedGroup"}},
+    "skipped_selection": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["typename", "reason"],
+        "properties": {
+          "typename": {"type": "string"},
+          "name": {"type": "string"},
+          "reason": {"enum": ["NOT_A_GROUP", "INSIDE_SELECTED_GROUP", "TEXT_EDITING"]}
+        }
+      }
+    },
+    "export_stats": {"type": "object"}
+  },
+  "definitions": {
+    "num": {"type": ["number", "null"]},
+    "rect": {
+      "description": "Illustrator [left, top, right, bottom] in points; with y_axis=up, top > bottom",
+      "type": "array", "minItems": 4, "maxItems": 4, "items": {"$ref": "#/definitions/num"}
+    },
+    "pathPoint": {
+      "description": "[anchorX, anchorY, leftDirX, leftDirY, rightDirX, rightDirY]; null = NaN in Illustrator",
+      "type": "array", "minItems": 6, "maxItems": 6, "items": {"$ref": "#/definitions/num"}
+    },
+    "nodePath": {"type": "array", "items": {"type": "integer", "minimum": 0}},
+    "stroke": {
+      "type": "object",
+      "properties": {
+        "width_pt": {"type": "number", "minimum": 0},
+        "join": {"enum": ["miter", "round", "bevel"]},
+        "cap": {"enum": ["butt", "round", "projecting"]},
+        "miter_limit": {"type": "number"}
+      }
+    },
+    "common": {
+      "type": "object",
+      "properties": {
+        "typename": {"type": "string"},
+        "name": {"type": "string"},
+        "hidden": {"type": "boolean"},
+        "locked": {"type": "boolean"},
+        "opacity": {"type": ["number", "null"]}
+      }
+    },
+    "pathNode": {
+      "allOf": [{"$ref": "#/definitions/common"}],
+      "type": "object",
+      "required": ["kind", "closed", "points"],
+      "properties": {
+        "kind": {"const": "path"},
+        "closed": {"type": "boolean"},
+        "filled": {"type": "boolean"},
+        "stroked": {"type": "boolean"},
+        "clipping": {"type": "boolean"},
+        "guides": {"type": "boolean"},
+        "fill_rule": {"enum": ["nonzero", "evenodd"]},
+        "stroke": {"$ref": "#/definitions/stroke"},
+        "visible_bounds_pt": {"$ref": "#/definitions/rect"},
+        "points": {"type": "array", "items": {"$ref": "#/definitions/pathPoint"}}
+      }
+    },
+    "compoundNode": {
+      "allOf": [{"$ref": "#/definitions/common"}],
+      "type": "object",
+      "required": ["kind", "paths"],
+      "properties": {
+        "kind": {"const": "compound"},
+        "filled": {"type": "boolean"},
+        "stroked": {"type": "boolean"},
+        "clipping": {"type": "boolean"},
+        "guides": {"type": "boolean"},
+        "fill_rule": {"enum": ["nonzero", "evenodd"]},
+        "stroke": {"$ref": "#/definitions/stroke"},
+        "geometric_bounds_pt": {"$ref": "#/definitions/rect"},
+        "paths": {"type": "array", "items": {"$ref": "#/definitions/pathNode"}}
+      }
+    },
+    "opaqueNode": {
+      "description": "Item whose painted area cannot be derived from vector data (raster, placed, text, symbol, mesh, plugin...)",
+      "allOf": [{"$ref": "#/definitions/common"}],
+      "type": "object",
+      "required": ["kind", "typename"],
+      "properties": {
+        "kind": {"const": "opaque"},
+        "geometric_bounds_pt": {"$ref": "#/definitions/rect"},
+        "visible_bounds_pt": {"$ref": "#/definitions/rect"},
+        "embedded": {"type": "boolean"}
+      }
+    },
+    "groupNode": {
+      "allOf": [{"$ref": "#/definitions/common"}],
+      "type": "object",
+      "required": ["kind", "children"],
+      "properties": {
+        "kind": {"const": "group"},
+        "clipped": {"type": "boolean"},
+        "children": {"type": "array", "items": {"$ref": "#/definitions/node"}}
+      }
+    },
+    "node": {
+      "oneOf": [
+        {"$ref": "#/definitions/groupNode"},
+        {"$ref": "#/definitions/pathNode"},
+        {"$ref": "#/definitions/compoundNode"},
+        {"$ref": "#/definitions/opaqueNode"}
+      ]
+    },
+    "tracker": {
+      "description": "An anchor point inside the group, used after Apply to verify the applied transform",
+      "type": "object",
+      "required": ["node_path", "point_index", "anchor_pt"],
+      "properties": {
+        "node_path": {"$ref": "#/definitions/nodePath"},
+        "point_index": {"type": "integer", "minimum": 0},
+        "anchor_pt": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "number"}}
+      }
+    },
+    "selectedGroup": {
+      "type": "object",
+      "required": ["id", "root"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[A-Za-z0-9_-]+$"},
+        "uuid": {"type": ["string", "null"]},
+        "name": {"type": "string"},
+        "selection_index": {"type": "integer"},
+        "layer": {"type": "string"},
+        "geometric_bounds_pt": {"$ref": "#/definitions/rect"},
+        "visible_bounds_pt": {"$ref": "#/definitions/rect"},
+        "root": {"$ref": "#/definitions/groupNode"},
+        "trackers": {"type": "array", "items": {"$ref": "#/definitions/tracker"}},
+        "stats": {"type": "object"},
+        "export_issues": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["code", "severity"],
+            "properties": {
+              "code": {"type": "string"},
+              "severity": {"enum": ["error", "warning", "info"]},
+              "message": {"type": "string"},
+              "node_path": {"anyOf": [{"$ref": "#/definitions/nodePath"}, {"type": "null"}]}
+            }
+          }
+        }
+      }
+    },
+    "settings": {
+      "type": "object",
+      "properties": {
+        "spacing_mm": {"type": "number", "minimum": 0},
+        "margin_mm": {"type": "number", "minimum": 0},
+        "curve_tolerance_mm": {"type": "number", "exclusiveMinimum": 0},
+        "conservative_curves": {"type": "boolean"},
+        "rotation": {
+          "type": "object",
+          "properties": {
+            "preset": {"enum": ["fixed", "0_180", "0_90_180_270", "step", "custom"]},
+            "step_deg": {"type": "number", "exclusiveMinimum": 0, "maximum": 360},
+            "custom_angles_deg": {"type": "array", "items": {"type": "number"}},
+            "allow_full_360": {"type": "boolean"},
+            "max_abs_deg": {"type": "number", "minimum": 0, "maximum": 180},
+            "prefer_original": {"type": "boolean"},
+            "grain_lock": {"type": "boolean"},
+            "allow_mirror": {"type": "boolean"}
+          }
+        },
+        "optimization": {
+          "type": "object",
+          "properties": {
+            "quality": {"enum": ["fast", "balanced", "high_quality"]},
+            "time_limit_s": {"type": ["number", "null"], "exclusiveMinimum": 0},
+            "max_iterations": {"type": ["integer", "null"], "minimum": 1},
+            "seed": {"type": "integer"},
+            "start_corner": {"enum": ["bottom_left", "bottom_right", "top_left", "top_right"]}
+          }
+        },
+        "material": {
+          "type": "object",
+          "properties": {
+            "mode": {"enum": ["fixed_artboard", "roll"]},
+            "roll_max_length_mm": {"type": ["number", "null"]},
+            "sheet_width_mm": {"type": ["number", "null"], "exclusiveMinimum": 0},
+            "sheet_length_mm": {"type": ["number", "null"], "exclusiveMinimum": 0}
+          }
+        },
+        "part_in_hole": {"type": "boolean"},
+        "opaque_policy": {"enum": ["require_outline", "use_bounds", "cut_line"]}
+      }
+    }
+  }
+}

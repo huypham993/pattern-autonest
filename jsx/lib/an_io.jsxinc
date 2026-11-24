@@ -1,0 +1,250 @@
+/*
+ * an_io.jsxinc - file output and diagnostics for Illustrator Auto Nesting (ES3).
+ *
+ * AN_IO   : output folder resolution, checked UTF-8 text write/read.
+ * AN_Diag : step log + environment report written to autonest_diagnostics.txt,
+ *           so that a failure on a user's machine can be located exactly
+ *           (step, error number, message, line, file).
+ */
+var AN_IO = (function () {
+    function folderPath(f) {
+        try { return f.fsName; } catch (e) { return String(f); }
+    }
+
+    function ensureFolder(folder) {
+        if (folder.exists) { return folder; }
+        if (!folder.create()) {
+            throw new Error("Cannot create folder: " + folderPath(folder) +
+                            (folder.error ? " (" + folder.error + ")" : ""));
+        }
+        return folder;
+    }
+
+    /* "<document name>_autonest" next to a saved document, else Documents/AutoNesting. */
+    function outputFolder(doc, subName) {
+        var base = null;
+        var docPath = null;
+        try {
+            docPath = doc.path; // never-saved documents have an empty path or throw
+        } catch (e) {
+            docPath = null;
+        }
+        if (docPath && docPath.fsName && String(docPath.fsName) !== "") {
+            var dn = String(doc.name).replace(/\.[^\.]+$/, "");
+            base = new Folder(docPath.fsName + "/" + dn + "_autonest");
+        } else {
+            base = new Folder(Folder.myDocuments.fsName + "/AutoNesting");
+        }
+        if (subName) { base = new Folder(base.fsName + "/" + subName); }
+        return ensureFolder(base);
+    }
+
+    function writeText(file, text) {
+        file.encoding = "UTF-8";
+        file.lineFeed = "Unix";
+        if (!file.open("w")) {
+            throw new Error("Cannot open file for writing: " + file.fsName + (file.error ? " (" + file.error + ")" : ""));
+        }
+        var ok = file.write(text);
+        var err = file.error;
+        file.close();
+        if (ok === false) {
+            throw new Error("Writing the file failed: " + file.fsName + (err ? " (" + err + ")" : ""));
+        }
+        if (!file.exists) {
+            throw new Error("File does not exist after writing: " + file.fsName);
+        }
+        return file;
+    }
+
+    function readText(file) {
+        file.encoding = "UTF-8";
+        if (!file.open("r")) {
+            throw new Error("Cannot open file for reading: " + file.fsName + (file.error ? " (" + file.error + ")" : ""));
+        }
+        var s = file.read();
+        file.close();
+        return s;
+    }
+
+    return { ensureFolder: ensureFolder, outputFolder: outputFolder, writeText: writeText, readText: readText };
+}());
+
+var AN_Diag = (function () {
+    function now() { return new Date().getTime(); }
+
+    function safe(fn, dflt) {
+        try { var v = fn(); return (typeof v === "undefined") ? dflt : v; } catch (e) { return dflt; }
+    }
+
+    function Diag(title) {
+        this.title = title;
+        this.t0 = now();
+        this.current = "start";
+        this.lines = [];
+        this.failed = false;
+        this.outcome = null;  // set when the task ended without an exception but did not do its job
+    }
+
+    Diag.prototype.log = function (msg) {
+        this.lines.push("[" + (now() - this.t0) + " ms] " + msg);
+    };
+
+    Diag.prototype.step = function (name) {
+        this.current = name;
+        this.log("STEP " + name);
+    };
+
+    Diag.prototype.fail = function (e) {
+        this.failed = true;
+        this.log("ERROR at step '" + this.current + "': " + AN_Diag.describe(e));
+        var stack = safe(function () { return $.stack; }, "");
+        if (stack) { this.log("ExtendScript stack:\n" + stack); }
+    };
+
+    Diag.prototype.environment = function () {
+        var info = [];
+        info.push("script        : " + safe(function () { return $.fileName; }, "?"));
+        info.push("build         : " + (typeof AN_BUILD_INFO !== "undefined" ? AN_BUILD_INFO.label : "source (not built)"));
+        info.push("extract       : " + safe(function () { return AN_Extract.VERSION; }, "?"));
+        info.push("application   : " + safe(function () { return app.name; }, "?") + " " +
+                  safe(function () { return app.version; }, "?"));
+        info.push("ExtendScript  : " + safe(function () { return $.version; }, "?") +
+                  " build " + safe(function () { return $.build; }, "?"));
+        info.push("OS            : " + safe(function () { return $.os; }, "?"));
+        info.push("locale        : " + safe(function () { return $.locale; }, "?"));
+        info.push("coord system  : " + safe(function () { return String(app.coordinateSystem); }, "?"));
+        info.push("documents     : " + safe(function () { return app.documents.length; }, "?"));
+        return info.join("\r\n");
+    };
+
+    Diag.prototype.text = function () {
+        return [
+            "Illustrator Auto Nesting - diagnostics",
+            "task          : " + this.title,
+            "result        : " + (this.failed ? "FAILED at step '" + this.current + "'" : (this.outcome || "OK")),
+            "date          : " + new Date().toString(),
+            this.environment(),
+            "",
+            "--- log ---",
+            this.lines.join("\r\n"),
+            ""
+        ].join("\r\n");
+    };
+
+    /* Write the report; never throws. Returns the path written or a reason. */
+    Diag.prototype.save = function (preferredFolder, fileName) {
+        var name = fileName || "autonest_diagnostics.txt";
+        var candidates = [];
+        if (preferredFolder) { candidates.push(preferredFolder); }
+        candidates.push(safe(function () { return new Folder(Folder.myDocuments.fsName + "/AutoNesting"); }, null));
+        candidates.push(safe(function () { return Folder.temp; }, null));
+        var errors = [];
+        for (var i = 0; i < candidates.length; i++) {
+            var folder = candidates[i];
+            if (!folder) { continue; }
+            try {
+                AN_IO.ensureFolder(folder);
+                var f = new File(folder.fsName + "/" + name);
+                AN_IO.writeText(f, this.text());
+                return f.fsName;
+            } catch (e) {
+                errors.push(AN_Diag.describe(e));
+            }
+        }
+        return "(could not write diagnostics: " + errors.join(" | ") + ")";
+    };
+
+    function describe(e) {
+        if (e === null || typeof e !== "object") { return String(e); }
+        var parts = [];
+        parts.push(e.name ? e.name + ": " + e.message : String(e.message || e));
+        if (typeof e.number !== "undefined") { parts.push("number=" + e.number); }
+        if (typeof e.line !== "undefined") { parts.push("line=" + e.line); }
+        if (e.fileName) { parts.push("file=" + e.fileName); }
+        if (e.source && typeof e.line === "number") {
+            var src = String(e.source).split(/\r\n|\r|\n/);
+            if (src.length >= e.line) { parts.push("code=" + src[e.line - 1].replace(/^\s+/, "")); }
+        }
+        return parts.join(", ");
+    }
+
+    return { create: function (title) { return new Diag(title); }, describe: describe };
+}());
+
+/*
+ * AN_Progress: a small ScriptUI palette ("Exporting group 12 of 78") so a long run shows it is alive.
+ * Illustrator stays busy while a script runs; the palette is repainted by win.update() after each item.
+ * A palette that cannot be created or drawn must not stop the task: the failure goes to the diagnostics log.
+ */
+var AN_Progress = (function () {
+    function Progress(title, total, diag) {
+        this.total = total;
+        this.diag = diag;
+        this.win = null;
+        if (typeof Window === "undefined" || total < 2) { return; }
+        try {
+            var w = new Window("palette", title);
+            w.alignChildren = "fill";
+            this.label = w.add("statictext", undefined, "Starting...");
+            this.label.preferredSize = [360, -1];
+            this.bar = w.add("progressbar", undefined, 0, total);
+            this.bar.preferredSize = [360, 12];
+            this.foot = w.add("statictext", undefined, "");   // step and seconds since the start
+            this.foot.preferredSize = [360, -1];
+            this.t0 = new Date().getTime();
+            w.show();
+            w.update();
+            this.win = w;
+        } catch (e) {
+            diag.log("progress window unavailable: " + AN_Diag.describe(e));
+        }
+    }
+
+    /* sub: optional text before the seconds, such as "Step 2 of 3" */
+    Progress.prototype.step = function (i, text, sub) {
+        if (!this.win) { return; }
+        try {
+            this.bar.value = i;
+            this.label.text = text;
+            this.foot.text = (sub ? sub + "      " : "") + Math.round((new Date().getTime() - this.t0) / 1000) + " s";
+            this.win.update();
+        } catch (e) {
+            this.diag.log("progress window update failed, hiding it: " + AN_Diag.describe(e));
+            this.close();
+        }
+    };
+
+    Progress.prototype.close = function () {
+        if (!this.win) { return; }
+        var w = this.win;
+        this.win = null;
+        try { w.close(); } catch (e) { this.diag.log("progress window close failed: " + AN_Diag.describe(e)); }
+    };
+
+    /* for the panel: the same calls write {value, total, text, sub} to a file that the panel reads and draws */
+    function FileProgress(path, total, diag) {
+        this.file = new File(path);
+        this.total = total;
+        this.diag = diag;
+    }
+
+    FileProgress.prototype.step = function (i, text, sub) {
+        if (!this.file) { return; }
+        try {
+            AN_IO.writeText(this.file, AN_JSON.stringify({ value: i, total: this.total, text: text, sub: sub || "" }));
+        } catch (e) {
+            this.diag.log("progress file not written, stopping it: " + AN_Diag.describe(e));
+            this.file = null;
+        }
+    };
+
+    FileProgress.prototype.close = function () {
+        if (!this.file) { return; }
+        try { this.file.remove(); } catch (e) { /* the panel removes it too */ }
+        this.file = null;
+    };
+
+    /* path: progress file for the panel (no window: a palette inside the panel's evalScript is suspected of losing the reply) */
+    return { create: function (title, total, diag, path) { return path ? new FileProgress(path, total, diag) : new Progress(title, total, diag); } };
+}());

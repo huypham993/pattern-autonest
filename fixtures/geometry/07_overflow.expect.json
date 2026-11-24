@@ -1,0 +1,252 @@
+{
+ "global": {
+  "codes": [
+   "TOTAL_AREA_EXCEEDS_SHEET"
+  ]
+ },
+ "groups": {
+  "g001": {
+   "status": "ok",
+   "name": "O1"
+  },
+  "g002": {
+   "status": "ok",
+   "name": "O2"
+  },
+  "g003": {
+   "status": "ok",
+   "name": "O3"
+  },
+  "g004": {
+   "status": "ok",
+   "name": "O4"
+  },
+  "g005": {
+   "status": "ok",
+   "name": "O5"
+  },
+  "g006": {
+   "status": "ok",
+   "name": "O6"
+  },
+  "g007": {
+   "status": "ok",
+   "name": "O7"
+  },
+  "g008": {
+   "status": "ok",
+   "name": "O8"
+  },
+  "g009": {
+   "status": "ok",
+   "name": "O9"
+  },
+  "g010": {
+   "status": "ok",
+   "name": "O10"
+  },
+  "g011": {
+   "status": "ok",
+   "name": "O11"
+  },
+  "g012": {
+   "status": "ok",
+   "name": "O12"
+  },
+  "g013": {
+   "status": "ok",
+   "name": "O13"
+  },
+  "g014": {
+   "status": "ok",
+   "name": "O14"
+  },
+  "g015": {
+   "status": "ok",
+   "name": "O15"
+  },
+  "g016": {
+   "status": "ok",
+   "name": "O16"
+  },
+  "g017": {
+   "status": "ok",
+   "name": "O17"
+  },
+  "g018": {
+   "status": "ok",
+   "name": "O18"
+  },
+  "g019": {
+   "status": "ok",
+   "name": "O19"
+  },
+  "g020": {
+   "status": "ok",
+   "name": "O20"
+  },
+  "g021": {
+   "status": "ok",
+   "name": "O21"
+  },
+  "g022": {
+   "status": "ok",
+   "name": "O22"
+  },
+  "g023": {
+   "status": "ok",
+   "name": "O23"
+  },
+  "g024": {
+   "status": "ok",
+   "name": "O24"
+  },
+  "g025": {
+   "status": "ok",
+   "name": "O25"
+  },
+  "g026": {
+   "status": "ok",
+   "name": "O26"
+  },
+  "g027": {
+   "status": "ok",
+   "name": "O27"
+  },
+  "g028": {
+   "status": "ok",
+   "name": "O28"
+  },
+  "g029": {
+   "status": "ok",
+   "name": "O29"
+  },
+  "g030": {
+   "status": "ok",
+   "name": "O30"
+  },
+  "g031": {
+   "status": "ok",
+   "name": "O31"
+  },
+  "g032": {
+   "status": "ok",
+   "name": "O32"
+  },
+  "g033": {
+   "status": "ok",
+   "name": "O33"
+  },
+  "g034": {
+   "status": "ok",
+   "name": "O34"
+  },
+  "g035": {
+   "status": "ok",
+   "name": "O35"
+  },
+  "g036": {
+   "status": "ok",
+   "name": "O36"
+  },
+  "g037": {
+   "status": "ok",
+   "name": "O37"
+  },
+  "g038": {
+   "status": "ok",
+   "name": "O38"
+  },
+  "g039": {
+   "status": "ok",
+   "name": "O39"
+  },
+  "g040": {
+   "status": "ok",
+   "name": "O40"
+  },
+  "g041": {
+   "status": "ok",
+   "name": "O41"
+  },
+  "g042": {
+   "status": "ok",
+   "name": "O42"
+  },
+  "g043": {
+   "status": "ok",
+   "name": "O43"
+  },
+  "g044": {
+   "status": "ok",
+   "name": "O44"
+  },
+  "g045": {
+   "status": "ok",
+   "name": "O45"
+  },
+  "g046": {
+   "status": "ok",
+   "name": "O46"
+  },
+  "g047": {
+   "status": "ok",
+   "name": "O47"
+  },
+  "g048": {
+   "status": "ok",
+   "name": "O48"
+  },
+  "g049": {
+   "status": "ok",
+   "name": "O49"
+  },
+  "g050": {
+   "status": "ok",
+   "name": "O50"
+  },
+  "g051": {
+   "status": "ok",
+   "name": "O51"
+  },
+  "g052": {
+   "status": "ok",
+   "name": "O52"
+  },
+  "g053": {
+   "status": "ok",
+   "name": "O53"
+  },
+  "g054": {
+   "status": "ok",
+   "name": "O54"
+  },
+  "g055": {
+   "status": "ok",
+   "name": "O55"
+  },
+  "g056": {
+   "status": "ok",
+   "name": "O56"
+  },
+  "g057": {
+   "status": "ok",
+   "name": "O57"
+  },
+  "g058": {
+   "status": "ok",
+   "name": "O58"
+  },
+  "g059": {
+   "status": "ok",
+   "name": "O59"
+  },
+  "g060": {
+   "status": "error",
+   "codes": [
+    "PART_TOO_LARGE"
+   ],
+   "name": "too_long"
+  }
+ }
+}

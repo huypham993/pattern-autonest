@@ -1,0 +1,37 @@
+{
+ "global": {},
+ "groups": {
+  "g001": {
+   "status": "ok",
+   "name": "tiny0"
+  },
+  "g002": {
+   "status": "ok",
+   "name": "tiny1"
+  },
+  "g003": {
+   "status": "ok",
+   "name": "tiny2"
+  },
+  "g004": {
+   "status": "ok",
+   "name": "tiny3"
+  },
+  "g005": {
+   "status": "ok",
+   "name": "tiny4"
+  },
+  "g006": {
+   "status": "ok",
+   "name": "tiny5"
+  },
+  "g007": {
+   "status": "ok",
+   "name": "tiny6"
+  },
+  "g008": {
+   "status": "ok",
+   "name": "tiny7"
+  }
+ }
+}

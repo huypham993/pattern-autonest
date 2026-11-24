@@ -1,0 +1,41 @@
+{
+ "global": {},
+ "groups": {
+  "g001": {
+   "status": "ok",
+   "codes": [
+    "HAS_HOLES"
+   ],
+   "name": "ring_evenodd"
+  },
+  "g002": {
+   "status": "ok",
+   "codes": [
+    "HAS_HOLES"
+   ],
+   "name": "ring_nonzero_reversed"
+  },
+  "g003": {
+   "status": "ok",
+   "name": "overlap_nonzero_union"
+  },
+  "g004": {
+   "status": "ok",
+   "codes": [
+    "MULTIPLE_ISLANDS"
+   ],
+   "name": "three_islands"
+  },
+  "g005": {
+   "status": "ok",
+   "codes": [
+    "HAS_HOLES"
+   ],
+   "name": "many_subpaths"
+  },
+  "g006": {
+   "status": "ok",
+   "name": "deep_nesting"
+  }
+ }
+}

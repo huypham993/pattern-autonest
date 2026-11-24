@@ -1,0 +1,277 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "autonest.placement/1",
+  "title": "Illustrator Auto Nesting - placement result (engine -> Illustrator)",
+  "description": "Rigid transform per group. p' = target + R(theta) * F * (p - pivot), all in Illustrator document points (y up). F = horizontal reflection when mirror=true, identity otherwise. theta is counter-clockwise. 'matrix' is the same transform as Illustrator Matrix fields [a, b, c, d, tx, ty]: x' = a*x + c*y + tx, y' = b*x + d*y + ty.",
+  "type": "object",
+  "required": [
+    "schema",
+    "source",
+    "status",
+    "placements",
+    "unplaced",
+    "metrics"
+  ],
+  "properties": {
+    "schema": {
+      "const": "autonest.placement/1"
+    },
+    "engine": {
+      "type": "object"
+    },
+    "source": {
+      "type": "object",
+      "required": [
+        "geometry_sha256",
+        "artboard"
+      ],
+      "properties": {
+        "geometry_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "document": {
+          "type": "object"
+        },
+        "artboard": {
+          "type": "object"
+        }
+      }
+    },
+    "transform_convention": {
+      "type": "object",
+      "properties": {
+        "space": {
+          "const": "illustrator_document"
+        },
+        "units": {
+          "const": "pt"
+        },
+        "y_axis": {
+          "const": "up"
+        },
+        "rotation": {
+          "const": "counter_clockwise_degrees"
+        },
+        "formula": {
+          "type": "string"
+        }
+      }
+    },
+    "status": {
+      "enum": [
+        "complete",
+        "partial",
+        "failed"
+      ]
+    },
+    "settings": {
+      "type": "object"
+    },
+    "placements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "rotation_deg",
+          "mirror",
+          "pivot_pt",
+          "target_pt",
+          "matrix"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "uuid": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "rotation_deg": {
+            "type": "number",
+            "minimum": 0,
+            "exclusiveMaximum": 360
+          },
+          "mirror": {
+            "type": "boolean"
+          },
+          "pivot_pt": {
+            "$ref": "#/definitions/pt"
+          },
+          "target_pt": {
+            "$ref": "#/definitions/pt"
+          },
+          "matrix": {
+            "type": "array",
+            "minItems": 6,
+            "maxItems": 6,
+            "items": {
+              "type": "number"
+            }
+          },
+          "expected_trackers_pt": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/pt"
+            }
+          },
+          "expected_bounds_mm": {
+            "type": "array",
+            "minItems": 4,
+            "maxItems": 4,
+            "items": {
+              "type": "number"
+            },
+            "description": "bounds of the transformed silhouette in the sheet frame [minx, miny, maxx, maxy]"
+          },
+          "name": {
+            "type": "string"
+          },
+          "pivot_mm": {
+            "$ref": "#/definitions/pt",
+            "description": "pivot in the sheet frame (mm from the artboard bottom-left, y up)"
+          },
+          "target_mm": {
+            "$ref": "#/definitions/pt"
+          }
+        }
+      }
+    },
+    "unplaced": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "reason"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "reason": {
+            "enum": [
+              "INVALID_GEOMETRY",
+              "DOES_NOT_FIT",
+              "NO_SPACE_LEFT",
+              "TIME_LIMIT",
+              "VERIFICATION_FAILED"
+            ]
+          },
+          "detail": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "properties": {
+        "total_groups": {
+          "type": "integer"
+        },
+        "placed": {
+          "type": "integer"
+        },
+        "unplaced": {
+          "type": "integer"
+        },
+        "used_length_mm": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "utilization": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "placed silhouette area / usable area"
+        },
+        "min_gap_mm": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "collisions": {
+          "type": "integer"
+        },
+        "boundary_violations": {
+          "type": "integer"
+        },
+        "elapsed_s": {
+          "type": "number"
+        },
+        "seed": {
+          "type": "integer"
+        },
+        "utilization_used_height": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "placed silhouette area / (usable width x used height)"
+        },
+        "placed_area_mm2": {
+          "type": "number"
+        }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "description": "Result of the independent verifier (autonest.verify). When ok is false the engine writes status 'failed', no placements, and every group as unplaced with reason VERIFICATION_FAILED.",
+      "required": [
+        "ok",
+        "collisions",
+        "spacing_violations",
+        "boundary_violations",
+        "rigidity_violations",
+        "problems"
+      ],
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "collisions": {
+          "type": "integer"
+        },
+        "spacing_violations": {
+          "type": "integer"
+        },
+        "boundary_violations": {
+          "type": "integer"
+        },
+        "rigidity_violations": {
+          "type": "integer"
+        },
+        "min_gap_mm": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "problems": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "pt": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {
+        "type": "number"
+      }
+    }
+  }
+}

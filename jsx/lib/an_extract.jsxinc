@@ -1,0 +1,322 @@
+/*
+ * an_extract.jsxinc - read-only geometry extraction for Illustrator Auto Nesting.
+ *
+ * Produces an "autonest.geometry/1" object from the selected GroupItems of a
+ * document.  This module NEVER modifies the document: it only reads DOM
+ * properties (no duplicate, outline, expand, flatten, tags or renaming).
+ *
+ * Coordinates are exported raw, in points, in Illustrator's document
+ * coordinate system (y up).  The caller must set
+ * app.coordinateSystem = CoordinateSystem.DOCUMENTCOORDINATESYSTEM before
+ * calling AN_Extract.run so that artboardRect and path anchors share one
+ * coordinate system.  Bezier handles are exported as-is; curve flattening
+ * happens in the Python engine with a configurable tolerance.
+ *
+ * ExtendScript is ES3: no Array.indexOf/forEach, no String.trim, no JSON.
+ */
+var AN_Extract = (function () {
+    var VERSION = "0.4.0";
+    var PRECISION = 10000; // round coordinates to 1e-4 pt (0.035 micrometre)
+
+    var OPAQUE_TYPES = {
+        RasterItem: 1, PlacedItem: 1, TextFrame: 1, SymbolItem: 1, MeshItem: 1,
+        PluginItem: 1, GraphItem: 1, LegacyTextItem: 1, NonNativeItem: 1
+    };
+
+    function r4(v) {
+        if (typeof v !== "number" || !isFinite(v)) { return null; }
+        return Math.round(v * PRECISION) / PRECISION;
+    }
+
+    function rect(b) {
+        if (!b || b.length !== 4) { return null; }
+        return [r4(b[0]), r4(b[1]), r4(b[2]), r4(b[3])];
+    }
+
+    /* Safe property read: some properties throw on some item types. */
+    function prop(obj, name, dflt) {
+        try {
+            var v = obj[name];
+            return (typeof v === "undefined") ? dflt : v;
+        } catch (e) {
+            return dflt;
+        }
+    }
+
+    function enumName(v) {
+        var s = String(v);
+        var i = s.lastIndexOf(".");
+        return i >= 0 ? s.substr(i + 1) : s;
+    }
+
+    function strokeInfo(p) {
+        var join = enumName(prop(p, "strokeJoin", "MITERENDJOIN"));
+        var cap = enumName(prop(p, "strokeCap", "BUTTENDCAP"));
+        return {
+            width_pt: r4(prop(p, "strokeWidth", 0)),
+            join: join === "ROUNDENDJOIN" ? "round" : (join === "BEVELENDJOIN" ? "bevel" : "miter"),
+            cap: cap === "ROUNDENDCAP" ? "round" : (cap === "PROJECTINGENDCAP" ? "projecting" : "butt"),
+            miter_limit: r4(prop(p, "strokeMiterLimit", 10))
+        };
+    }
+
+    function Ctx(settings) {
+        this.settings = settings;
+        this.issues = [];
+        this.pointCount = 0;
+        this.trackA = null;   // {node_path, point_index, anchor_pt}
+        this.trackB = null;
+        this.trackBDist = -1;
+        this.counts = { paths: 0, compounds: 0, groups: 0, opaque: 0 };
+    }
+
+    Ctx.prototype.issue = function (code, severity, message, nodePath) {
+        this.issues.push({ code: code, severity: severity, message: message, node_path: nodePath });
+    };
+
+    /* Keep two anchors far apart: used after Apply to verify the transform. */
+    Ctx.prototype.track = function (nodePath, idx, ax, ay) {
+        if (this.trackA === null) {
+            this.trackA = { node_path: nodePath, point_index: idx, anchor_pt: [ax, ay] };
+            return;
+        }
+        var dx = ax - this.trackA.anchor_pt[0], dy = ay - this.trackA.anchor_pt[1];
+        var d = dx * dx + dy * dy;
+        if (d > this.trackBDist) {
+            this.trackBDist = d;
+            this.trackB = { node_path: nodePath, point_index: idx, anchor_pt: [ax, ay] };
+        }
+    };
+
+    function exportPoints(pathItem, nodePath, ctx) {
+        var pps = pathItem.pathPoints;
+        var n = pps.length;
+        var out = [];
+        for (var i = 0; i < n; i++) {
+            var pp = pps[i];
+            var a = pp.anchor, l = pp.leftDirection, r = pp.rightDirection;
+            var ax = r4(a[0]), ay = r4(a[1]);
+            out.push([ax, ay, r4(l[0]), r4(l[1]), r4(r[0]), r4(r[1])]);
+            if (ax !== null && ay !== null) { ctx.track(nodePath, i, ax, ay); }
+        }
+        ctx.pointCount += n;
+        return out;
+    }
+
+    function common(item, kind) {
+        return {
+            kind: kind,
+            typename: item.typename,
+            name: prop(item, "name", ""),
+            hidden: !!prop(item, "hidden", false),
+            locked: !!prop(item, "locked", false),
+            opacity: r4(prop(item, "opacity", 100))
+        };
+    }
+
+    function exportPath(item, nodePath, ctx) {
+        var node = common(item, "path");
+        ctx.counts.paths++;
+        node.closed = !!prop(item, "closed", false);
+        node.filled = !!prop(item, "filled", false);
+        node.stroked = !!prop(item, "stroked", false);
+        node.clipping = !!prop(item, "clipping", false);
+        node.guides = !!prop(item, "guides", false);
+        node.fill_rule = prop(item, "evenodd", false) ? "evenodd" : "nonzero";
+        if (node.stroked) {
+            node.stroke = strokeInfo(item);
+            node.visible_bounds_pt = rect(prop(item, "visibleBounds", null));
+        }
+        node.points = exportPoints(item, nodePath, ctx);
+        return node;
+    }
+
+    function exportCompound(item, nodePath, ctx) {
+        var node = common(item, "compound");
+        ctx.counts.compounds++;
+        var subs = item.pathItems;
+        node.paths = [];
+        var first = subs.length > 0 ? subs[0] : null;
+        // A compound path's appearance lives on its sub-paths (all share it).
+        node.filled = first ? !!prop(first, "filled", false) : false;
+        node.stroked = first ? !!prop(first, "stroked", false) : false;
+        node.clipping = first ? !!prop(first, "clipping", false) : false;
+        node.guides = first ? !!prop(first, "guides", false) : false;
+        node.fill_rule = (first && prop(first, "evenodd", false)) ? "evenodd" : "nonzero";
+        if (node.stroked) { node.stroke = strokeInfo(first); }
+        node.geometric_bounds_pt = rect(prop(item, "geometricBounds", null));
+        for (var i = 0; i < subs.length; i++) {
+            var sp = subs[i];
+            var spPath = nodePath.concat([i]);
+            node.paths.push({
+                kind: "path",
+                closed: !!prop(sp, "closed", false),
+                points: exportPoints(sp, spPath, ctx)
+            });
+        }
+        return node;
+    }
+
+    function exportOpaque(item, nodePath, ctx) {
+        var node = common(item, "opaque");
+        ctx.counts.opaque++;
+        node.geometric_bounds_pt = rect(prop(item, "geometricBounds", null));
+        node.visible_bounds_pt = rect(prop(item, "visibleBounds", null));
+        if (item.typename === "PlacedItem" || item.typename === "RasterItem") {
+            node.embedded = !!prop(item, "embedded", false);
+        }
+        return node;
+    }
+
+    function exportGroup(item, nodePath, ctx) {
+        var node = common(item, "group");
+        ctx.counts.groups++;
+        node.clipped = !!prop(item, "clipped", false);
+        node.children = [];
+        var items = item.pageItems;
+        for (var i = 0; i < items.length; i++) {
+            node.children.push(exportItem(items[i], nodePath.concat([i]), ctx));
+        }
+        return node;
+    }
+
+    function exportItem(item, nodePath, ctx) {
+        var t = item.typename;
+        if (t === "GroupItem") { return exportGroup(item, nodePath, ctx); }
+        if (t === "PathItem") { return exportPath(item, nodePath, ctx); }
+        if (t === "CompoundPathItem") { return exportCompound(item, nodePath, ctx); }
+        if (!OPAQUE_TYPES[t]) {
+            ctx.issue("UNKNOWN_ITEM_TYPE", "warning", "Unknown object type: " + t, nodePath);
+        }
+        return exportOpaque(item, nodePath, ctx);
+    }
+
+    function pad(n, w) {
+        var s = String(n);
+        while (s.length < w) { s = "0" + s; }
+        return s;
+    }
+
+    function isNestedInSelected(item, uuidSet) {
+        var p = prop(item, "parent", null);
+        var guard = 0;
+        while (p && guard < 100) {
+            var t = prop(p, "typename", "");
+            if (t === "Layer" || t === "Document") { return false; }
+            var u = prop(p, "uuid", null);
+            if (u !== null && uuidSet[String(u)]) { return true; }
+            p = prop(p, "parent", null);
+            guard++;
+        }
+        return false;
+    }
+
+    function exportSelectedGroup(item, index, settings) {
+        var ctx = new Ctx(settings);
+        var root = exportGroup(item, [], ctx);
+        var layer = prop(item, "layer", null);
+        var g = {
+            id: "g" + pad(index + 1, 3),
+            uuid: (function () { var u = prop(item, "uuid", null); return u === null ? null : String(u); }()),
+            name: prop(item, "name", ""),
+            selection_index: index,
+            layer: layer ? prop(layer, "name", "") : "",
+            geometric_bounds_pt: rect(prop(item, "geometricBounds", null)),
+            visible_bounds_pt: rect(prop(item, "visibleBounds", null)),
+            root: root,
+            trackers: [],
+            stats: { points: ctx.pointCount, paths: ctx.counts.paths, compounds: ctx.counts.compounds,
+                     groups: ctx.counts.groups, opaque: ctx.counts.opaque },
+            export_issues: ctx.issues
+        };
+        if (ctx.trackA) { g.trackers.push(ctx.trackA); }
+        if (ctx.trackB) { g.trackers.push(ctx.trackB); }
+        if (layer) {
+            if (prop(layer, "printable", true) === false) {
+                g.export_issues.push({ code: "LAYER_NOT_PRINTABLE", severity: "warning",
+                    message: "The group is on a non-printing layer.", node_path: null });
+            }
+        }
+        var parent = prop(item, "parent", null);
+        if (parent && prop(parent, "typename", "") === "GroupItem") {
+            g.export_issues.push({ code: "NESTED_SELECTION", severity: "warning",
+                message: "The selected group is inside another group.", node_path: null });
+        }
+        return g;
+    }
+
+    /*
+     * run(doc, settings, appInfo, onGroup) -> autonest.geometry/1 object
+     * Only top-level selected GroupItems are exported; everything else in the
+     * selection is reported in skipped_selection.
+     * onGroup(done, total, group) is called after each exported group (progress + timing).
+     */
+    function run(doc, settings, appInfo, onGroup) {
+        var t0 = new Date().getTime();
+        var sel = doc.selection;
+        var out = {
+            schema: "autonest.geometry/1",
+            generator: {
+                name: "Illustrator_AutoNesting.jsx",
+                version: VERSION,
+                illustrator_version: appInfo && appInfo.version ? String(appInfo.version) : null,
+                exported_at: new Date().toUTCString()
+            },
+            document: {
+                name: prop(doc, "name", ""),
+                path: (function () { try { return doc.fullName.fsName; } catch (e) { return null; } }()),
+                ruler_units: enumName(prop(doc, "rulerUnits", "")),
+                color_space: enumName(prop(doc, "documentColorSpace", ""))
+            },
+            coordinate_system: { space: "illustrator_document", units: "pt", y_axis: "up" },
+            artboard: null,
+            settings: settings,
+            groups: [],
+            skipped_selection: [],
+            export_stats: {}
+        };
+
+        var abIndex = doc.artboards.getActiveArtboardIndex();
+        var ab = doc.artboards[abIndex];
+        var abRect = ab.artboardRect;
+        out.artboard = { index: abIndex, name: prop(ab, "name", ""), rect_pt: rect(abRect) };
+        // Detect the vertical axis direction from the data instead of assuming it.
+        out.coordinate_system.y_axis = (abRect[1] > abRect[3]) ? "up" : "down";
+
+        if (!sel || typeof sel.length === "undefined" || prop(sel, "typename", "") === "TextRange") {
+            out.skipped_selection.push({ typename: "TextRange", reason: "TEXT_EDITING" });
+            return out;
+        }
+
+        var uuidSet = {}, i, it;
+        for (i = 0; i < sel.length; i++) {
+            it = sel[i];
+            if (it.typename === "GroupItem") {
+                var u = prop(it, "uuid", null);
+                if (u !== null) { uuidSet[String(u)] = true; }
+            }
+        }
+        var points = 0;
+        for (i = 0; i < sel.length; i++) {
+            it = sel[i];
+            if (it.typename !== "GroupItem") {
+                out.skipped_selection.push({ typename: it.typename, name: prop(it, "name", ""), reason: "NOT_A_GROUP" });
+                continue;
+            }
+            if (isNestedInSelected(it, uuidSet)) {
+                out.skipped_selection.push({ typename: it.typename, name: prop(it, "name", ""),
+                    reason: "INSIDE_SELECTED_GROUP" });
+                continue;
+            }
+            var g = exportSelectedGroup(it, out.groups.length, settings);
+            points += g.stats.points;
+            out.groups.push(g);
+            if (onGroup) { onGroup(i + 1, sel.length, g); }
+        }
+        out.export_stats = { groups: out.groups.length, points: points,
+                             elapsed_ms: new Date().getTime() - t0 };
+        return out;
+    }
+
+    return { run: run, VERSION: VERSION, _enumName: enumName };
+}());

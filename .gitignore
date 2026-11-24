@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+engine/.venv/
+tests/jsx_harness/node_modules/
+node_modules/
+build/
+dist/panel/
+dist/AutoNesting_Setup.exe

@@ -1,0 +1,12 @@
+{
+  "name": "illustrator-autonesting-tools",
+  "private": true,
+  "description": "Build + static verification of the ExtendScript sources (not needed to run the tool in Illustrator)",
+  "scripts": {
+    "build": "node tools/build/build_jsx.js",
+    "check": "node tools/build/build_jsx.js --check"
+  },
+  "devDependencies": {
+    "acorn": "8.14.0"
+  }
+}

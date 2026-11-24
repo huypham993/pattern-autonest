@@ -1,0 +1,44 @@
+{
+ "global": {},
+ "groups": {
+  "g001": {
+   "status": "ok",
+   "codes": [
+    "FITS_ONLY_SOME_ORIENTATIONS"
+   ],
+   "name": "diag_bar"
+  },
+  "g002": {
+   "status": "ok",
+   "name": "R1"
+  },
+  "g003": {
+   "status": "ok",
+   "name": "R2"
+  },
+  "g004": {
+   "status": "ok",
+   "name": "R3"
+  },
+  "g005": {
+   "status": "ok",
+   "name": "R4"
+  },
+  "g006": {
+   "status": "ok",
+   "name": "R5"
+  },
+  "g007": {
+   "status": "ok",
+   "name": "R6"
+  },
+  "g008": {
+   "status": "ok",
+   "name": "R7"
+  },
+  "g009": {
+   "status": "ok",
+   "name": "R8"
+  }
+ }
+}

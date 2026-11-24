@@ -1,0 +1,45 @@
+{
+ "global": {},
+ "groups": {
+  "g001": {
+   "status": "ok",
+   "name": "LU1"
+  },
+  "g002": {
+   "status": "ok",
+   "name": "LU2"
+  },
+  "g003": {
+   "status": "ok",
+   "name": "LU3"
+  },
+  "g004": {
+   "status": "ok",
+   "name": "LU4"
+  },
+  "g005": {
+   "status": "ok",
+   "name": "LU5"
+  },
+  "g006": {
+   "status": "ok",
+   "name": "LU6"
+  },
+  "g007": {
+   "status": "ok",
+   "name": "LU7"
+  },
+  "g008": {
+   "status": "ok",
+   "name": "LU8"
+  },
+  "g009": {
+   "status": "ok",
+   "name": "LU9"
+  },
+  "g010": {
+   "status": "ok",
+   "name": "LU10"
+  }
+ }
+}

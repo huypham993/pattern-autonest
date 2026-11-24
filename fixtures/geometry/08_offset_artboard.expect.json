@@ -1,0 +1,65 @@
+{
+ "global": {},
+ "groups": {
+  "g001": {
+   "status": "ok",
+   "has_curves": true,
+   "name": "OA1"
+  },
+  "g002": {
+   "status": "ok",
+   "has_curves": true,
+   "name": "OA2"
+  },
+  "g003": {
+   "status": "ok",
+   "has_curves": true,
+   "name": "OA3"
+  },
+  "g004": {
+   "status": "ok",
+   "has_curves": true,
+   "name": "OA4"
+  },
+  "g005": {
+   "status": "ok",
+   "has_curves": true,
+   "name": "OA5"
+  },
+  "g006": {
+   "status": "ok",
+   "has_curves": true,
+   "name": "OA6"
+  },
+  "g007": {
+   "status": "ok",
+   "has_curves": true,
+   "name": "OA7"
+  },
+  "g008": {
+   "status": "ok",
+   "has_curves": true,
+   "name": "OA8"
+  },
+  "g009": {
+   "status": "ok",
+   "has_curves": true,
+   "name": "OA9"
+  },
+  "g010": {
+   "status": "ok",
+   "has_curves": true,
+   "name": "OA10"
+  },
+  "g011": {
+   "status": "ok",
+   "has_curves": true,
+   "name": "OA11"
+  },
+  "g012": {
+   "status": "ok",
+   "has_curves": true,
+   "name": "OA12"
+  }
+ }
+}

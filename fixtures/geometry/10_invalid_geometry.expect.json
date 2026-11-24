@@ -1,0 +1,126 @@
+{
+ "global": {
+  "skipped_selection": 2
+ },
+ "groups": {
+  "g001": {
+   "status": "ok",
+   "codes": [
+    "HAS_HOLES"
+   ],
+   "name": "hole"
+  },
+  "g002": {
+   "status": "warning",
+   "codes": [
+    "OPEN_FILLED_PATH"
+   ],
+   "name": "open_filled"
+  },
+  "g003": {
+   "status": "ok",
+   "name": "open_stroke_only"
+  },
+  "g004": {
+   "status": "warning",
+   "codes": [
+    "SELF_INTERSECTION"
+   ],
+   "name": "bowtie"
+  },
+  "g005": {
+   "status": "warning",
+   "codes": [
+    "SELF_INTERSECTION"
+   ],
+   "name": "pentagram_evenodd"
+  },
+  "g006": {
+   "status": "warning",
+   "codes": [
+    "SELF_INTERSECTION"
+   ],
+   "name": "pentagram_nonzero"
+  },
+  "g007": {
+   "status": "error",
+   "codes": [
+    "OUTLINE_SELF_INTERSECTION"
+   ],
+   "name": "outline_selfx"
+  },
+  "g008": {
+   "status": "error",
+   "codes": [
+    "OUTLINE_NOT_CLOSED"
+   ],
+   "name": "outline_open"
+  },
+  "g009": {
+   "status": "ok",
+   "codes": [
+    "DEGENERATE_FILL"
+   ],
+   "name": "degenerate_plus_valid"
+  },
+  "g010": {
+   "status": "error",
+   "codes": [
+    "EMPTY_SILHOUETTE"
+   ],
+   "name": "degenerate_only"
+  },
+  "g011": {
+   "status": "error",
+   "codes": [
+    "BAD_COORDINATES"
+   ],
+   "name": "nan_coordinates"
+  },
+  "g012": {
+   "status": "ok",
+   "codes": [
+    "GUIDE_IGNORED",
+    "INVISIBLE_PATH_IGNORED"
+   ],
+   "area_mm2": 2500.0,
+   "name": "guides_and_tech_lines"
+  },
+  "g013": {
+   "status": "error",
+   "codes": [
+    "LOCKED_CHILD"
+   ],
+   "name": "locked_child"
+  },
+  "g014": {
+   "status": "warning",
+   "codes": [
+    "APPEARANCE_EXCEEDS_GEOMETRY"
+   ],
+   "name": "effect_exceeds"
+  },
+  "g015": {
+   "status": "error",
+   "codes": [
+    "COORDINATE_MISMATCH"
+   ],
+   "name": "coordinate_mismatch"
+  },
+  "g016": {
+   "status": "ok",
+   "codes": [
+    "HIDDEN_IGNORED"
+   ],
+   "area_mm2": 900.0,
+   "name": "hidden_child"
+  },
+  "g017": {
+   "status": "ok",
+   "codes": [
+    "OPEN_PATH_COINCIDENT_ENDS"
+   ],
+   "name": "open_coincident"
+  }
+ }
+}

@@ -1,0 +1,136 @@
+/*
+ * an_panel.jsxinc - entry points called by the CEP panel through evalScript.
+ * Each returns a JSON string (evalScript only transports strings) and, when resultPath is given, also writes it
+ * to that file: the panel reads the file if the evalScript reply never arrives.
+ */
+function AN_panelResult(out, resultPath) {
+    var s = AN_JSON.stringify(out);
+    if (!resultPath) { return s; }
+    try {
+        AN_IO.writeText(new File(resultPath), s);
+    } catch (e) {
+        out.result_file_error = AN_Diag.describe(e);   // reported to the panel through the normal reply
+        s = AN_JSON.stringify(out);
+    }
+    return s;
+}
+
+/* the panel reads the progress of a running call from this file and draws it (see AN_Progress) */
+function AN_panelProgressFile(resultPath) { return resultPath ? resultPath + ".progress" : null; }
+
+/*
+ * Signature of the selection, so the panel can re-nest with new settings without the slow export when nothing
+ * changed. Every item in every selected group adds its type, flags and bounds; every path also adds its point
+ * count, area and length (one DOM read each, not one per point), so a reshape inside unchanged group bounds is
+ * still seen. Returns {document, artboard, groups: "uuid:hash ..." sorted by uuid}. Reads only.
+ * shortcut: a reshape that keeps a path's bounds, point count, area and length all exactly equal goes unseen;
+ * hash the anchors if that ever matters (it costs as much as the export).
+ */
+function AN_panelSignature() {
+    if (app.documents.length === 0) { return null; }
+    var doc = app.activeDocument;
+    var prevCS = app.coordinateSystem;
+    app.coordinateSystem = CoordinateSystem.DOCUMENTCOORDINATESYSTEM;
+    try {
+        var parts = [], sel = doc.selection, i;
+        if (sel && typeof sel.length !== "undefined") {
+            for (i = 0; i < sel.length; i++) {
+                if (sel[i].typename === "GroupItem") { parts.push(String(sel[i].uuid) + ":" + AN_panelHash(AN_panelDescribe(sel[i]))); }
+            }
+        }
+        parts.sort();
+        var abi = doc.artboards.getActiveArtboardIndex();
+        return { document: doc.name, artboard: abi + ":" + AN_panelNums(doc.artboards[abi].artboardRect),
+                 groups: parts.join(" ") };
+    } finally {
+        app.coordinateSystem = prevCS;
+    }
+}
+
+function AN_panelNums(a) {
+    var s = [], i;
+    for (i = 0; i < a.length; i++) { s.push(Math.round(a[i] * 1000) / 1000); }
+    return s.join(",");
+}
+
+function AN_panelDescribe(item) {
+    var t = item.typename, s = t + (item.hidden ? "h" : "") + "[" + AN_panelNums(item.geometricBounds) + "|" +
+        AN_panelNums(item.visibleBounds) + "]", i;
+    if (t === "PathItem") {
+        s += item.pathPoints.length + "," + AN_panelNums([item.area, item.length, item.strokeWidth]) +
+             (item.closed ? "c" : "") + (item.filled ? "f" : "") + (item.stroked ? "s" : "") + (item.clipping ? "k" : "") +
+             (item.guides ? "g" : "") + (item.evenodd ? "e" : "");
+    } else if (t === "GroupItem") {
+        s += (item.clipped ? "k" : "") + "{";
+        for (i = 0; i < item.pageItems.length; i++) { s += AN_panelDescribe(item.pageItems[i]) + ";"; }
+        s += "}";
+    } else if (t === "CompoundPathItem") {
+        s += "{";
+        for (i = 0; i < item.pathItems.length; i++) { s += AN_panelDescribe(item.pathItems[i]) + ";"; }
+        s += "}";
+    }
+    return s;
+}
+
+/* two independent string hashes (products stay below 2^53, so the arithmetic is exact) */
+function AN_panelHash(s) {
+    var h1 = 0, h2 = 7, i, c;
+    for (i = 0; i < s.length; i++) {
+        c = s.charCodeAt(i);
+        h1 = (h1 * 31 + c) % 2147483647;
+        h2 = (h2 * 131 + c) % 1000000007;
+    }
+    return h1.toString(36) + "." + h2.toString(36) + "." + s.length.toString(36);
+}
+
+/* expectJson: the signature returned by the previous export; "" forces an export */
+function AN_panelExport(expectJson, resultPath) {
+    var reason = null;
+    if (expectJson) {
+        var expect = AN_JSON.parse(expectJson), now = null;
+        try { now = AN_panelSignature(); } catch (e) { reason = "could not check the selection: " + AN_Diag.describe(e); }
+        if (reason) { /* export again */ }
+        else if (now === null) { reason = "no document"; }
+        else if (now.document !== expect.document) { reason = "another document is active"; }
+        else if (now.artboard !== expect.artboard) { reason = "the artboard changed"; }
+        else if (now.groups !== expect.groups) { reason = "the selection or a group changed"; }
+        else { return AN_panelResult({ status: "unchanged" }, resultPath); }
+    }
+    var r = AN_exportGeometry({ progressFile: AN_panelProgressFile(resultPath) });
+    var out = { status: r.status, geometryPath: r.geometryPath, diagnosticsPath: r.diagnosticsPath,
+                error: r.error, step: r.step || null, groups: r.groups, skipped: r.skipped || 0,
+                reexport_reason: reason };
+    if (r.geo) {
+        out.skipped = r.geo.skipped_selection.length;
+        out.points = r.geo.export_stats.points;
+        out.export_ms = r.geo.export_stats.elapsed_ms;
+        out.document = r.geo.document.name;
+    }
+    if (r.status === "ok") {
+        try { out.signature = AN_JSON.stringify(AN_panelSignature()); }
+        catch (e2) { out.signature_error = AN_Diag.describe(e2); }   // the next Nest then exports again
+    }
+    return AN_panelResult(out, resultPath);
+}
+
+function AN_panelApply(placementPath, geometrySha256, resizeArtboard, resultPath) {
+    var r = AN_applyPlacement({ placementPath: placementPath, geometrySha256: geometrySha256, progressFile: AN_panelProgressFile(resultPath),
+                                resizeArtboard: resizeArtboard === true });
+    r.message = AN_applyMessage(r);
+    return AN_panelResult(r, resultPath);
+}
+
+/* corner: "bottom_left" | "bottom_right" | "top_left" | "top_right"; heightMm "" keeps the label size */
+function AN_panelPlaceLabels(gapMm, heightMm, corner, group, resultPath) {
+    var r = AN_placeLabels({ gapMm: gapMm, heightMm: heightMm, corner: corner, group: group === true,
+                             progressFile: AN_panelProgressFile(resultPath) });
+    r.message = AN_labelsMessage(r);
+    return AN_panelResult(r, resultPath);
+}
+
+/* groups each piece with its label and parts (inside its cut line or within half spacingMm of it); labels stay put */
+function AN_panelGroupLabels(spacingMm, resultPath) {
+    var r = AN_placeLabels({ place: false, group: true, spacingMm: spacingMm, progressFile: AN_panelProgressFile(resultPath) });
+    r.message = AN_labelsMessage(r);
+    return AN_panelResult(r, resultPath);
+}

@@ -1,0 +1,85 @@
+{
+ "global": {},
+ "groups": {
+  "g001": {
+   "status": "ok",
+   "name": "C1"
+  },
+  "g002": {
+   "status": "ok",
+   "name": "C2"
+  },
+  "g003": {
+   "status": "ok",
+   "name": "C3"
+  },
+  "g004": {
+   "status": "ok",
+   "name": "C4"
+  },
+  "g005": {
+   "status": "ok",
+   "name": "C5"
+  },
+  "g006": {
+   "status": "ok",
+   "name": "C6"
+  },
+  "g007": {
+   "status": "ok",
+   "name": "C7"
+  },
+  "g008": {
+   "status": "ok",
+   "name": "C8"
+  },
+  "g009": {
+   "status": "ok",
+   "name": "C9"
+  },
+  "g010": {
+   "status": "ok",
+   "name": "C10"
+  },
+  "g011": {
+   "status": "ok",
+   "name": "C11"
+  },
+  "g012": {
+   "status": "ok",
+   "name": "C12"
+  },
+  "g013": {
+   "status": "ok",
+   "name": "C13"
+  },
+  "g014": {
+   "status": "ok",
+   "name": "C14"
+  },
+  "g015": {
+   "status": "ok",
+   "name": "C15"
+  },
+  "g016": {
+   "status": "ok",
+   "name": "C16"
+  },
+  "g017": {
+   "status": "ok",
+   "name": "C17"
+  },
+  "g018": {
+   "status": "ok",
+   "name": "C18"
+  },
+  "g019": {
+   "status": "ok",
+   "name": "C19"
+  },
+  "g020": {
+   "status": "ok",
+   "name": "C20"
+  }
+ }
+}

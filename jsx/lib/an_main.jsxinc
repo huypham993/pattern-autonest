@@ -1,0 +1,160 @@
+/*
+ * an_main.jsxinc - "Export Geometry" command (Phase 2, read-only).
+ *
+ * Collects the selected GroupItems of the active document and writes
+ * geometry.json (autonest.geometry/1).  The document is never modified.
+ * Every step is logged; on failure the user gets the exact step, error
+ * number, message, line and file, and autonest_diagnostics.txt is written.
+ */
+var AN_DEFAULT_SETTINGS = {
+    spacing_mm: 5,
+    margin_mm: 10,
+    curve_tolerance_mm: 0.25,
+    conservative_curves: true,
+    rotation: {
+        preset: "0_180",
+        step_deg: 5,
+        custom_angles_deg: [],
+        allow_full_360: true,
+        max_abs_deg: 180,
+        prefer_original: true,
+        grain_lock: false,
+        allow_mirror: false
+    },
+    optimization: { quality: "balanced", time_limit_s: 60, max_iterations: null, seed: 1 },
+    material: { mode: "fixed_artboard", roll_max_length_mm: null },
+    part_in_hole: true,
+    opaque_policy: "cut_line"
+};
+
+function AN_countExportIssues(geo) {
+    var n = 0;
+    for (var i = 0; i < geo.groups.length; i++) { n += geo.groups[i].export_issues.length; }
+    return n;
+}
+
+/*
+ * Returns a result object (also used by automated tests):
+ *   {status: "ok"|"no_document"|"empty_selection"|"error", geometryPath, diagnosticsPath, error}
+ */
+function AN_exportGeometry(options) {
+    var opts = options || {};
+    var diag = AN_Diag.create("Export Geometry");
+    var result = { status: "error", geometryPath: null, diagnosticsPath: null, error: null, groups: 0 };
+    var prevCS = null;
+    var csChanged = false;
+    var outFolder = null;
+    var geo = null;
+    var progress = null;
+
+    try {
+        diag.step("check-document");
+        if (app.documents.length === 0) {
+            result.status = "no_document";
+            diag.log("no open document");
+            return result;
+        }
+        var doc = app.activeDocument;
+        diag.log("document: " + doc.name);
+
+        diag.step("set-coordinate-system");
+        prevCS = app.coordinateSystem;
+        // Anchors, bounds and artboardRect must share one coordinate system.
+        app.coordinateSystem = CoordinateSystem.DOCUMENTCOORDINATESYSTEM;
+        csChanged = true;
+
+        diag.step("extract");
+        progress = AN_Progress.create("Auto Nesting - exporting", doc.selection.length, diag, opts.progressFile);
+        var tGroup = new Date().getTime();
+        geo = AN_Extract.run(doc, opts.settings || AN_DEFAULT_SETTINGS, { version: app.version }, function (done, total, g) {
+            var now = new Date().getTime();
+            diag.log("exported " + g.id + " '" + g.name + "' points=" + g.stats.points + " ms=" + (now - tGroup));
+            tGroup = now;
+            progress.step(done, "Exporting selected item " + done + " of " + total + " (" + g.name + ")");
+        });
+        progress.close();
+
+        diag.step("restore-coordinate-system");
+        app.coordinateSystem = prevCS;
+        csChanged = false;
+
+        diag.log("artboard " + geo.artboard.index + " rect_pt=" + geo.artboard.rect_pt.join(",") +
+                 " y_axis=" + geo.coordinate_system.y_axis);
+        diag.log("groups=" + geo.groups.length + " skipped=" + geo.skipped_selection.length +
+                 " points=" + (geo.export_stats.points || 0) + " export_ms=" + (geo.export_stats.elapsed_ms || 0));
+        result.groups = geo.groups.length;
+
+        diag.step("resolve-output-folder");
+        outFolder = opts.outputFolder ? AN_IO.ensureFolder(opts.outputFolder) : AN_IO.outputFolder(doc);
+        diag.log("output folder: " + outFolder.fsName);
+
+        if (geo.groups.length === 0) {
+            result.status = "empty_selection";
+            result.skipped = geo.skipped_selection.length;
+            diag.log("nothing to export");
+            result.diagnosticsPath = diag.save(outFolder);
+            return result;
+        }
+
+        diag.step("serialize");
+        var text = AN_JSON.stringify(geo);
+        // no ExtendScript re-parse here: it took ~30% of a 3 MB export; the engine validates the file strictly
+        diag.step("write-geometry");
+        var file = new File(outFolder.fsName + "/geometry.json");
+        AN_IO.writeText(file, text);
+        result.geometryPath = file.fsName;
+        diag.log("wrote " + file.fsName + " (" + text.length + " chars)");
+
+        diag.step("done");
+        result.status = "ok";
+        result.geo = geo;
+        result.diagnosticsPath = diag.save(outFolder);
+        return result;
+    } catch (e) {
+        if (progress) { progress.close(); }
+        if (csChanged) {
+            try {
+                app.coordinateSystem = prevCS;
+                diag.log("coordinate system restored after error");
+            } catch (e2) {
+                diag.log("FAILED to restore coordinate system: " + AN_Diag.describe(e2));
+            }
+        }
+        diag.fail(e);
+        result.status = "error";
+        result.error = AN_Diag.describe(e);
+        result.step = diag.current;
+        result.diagnosticsPath = diag.save(outFolder);
+        return result;
+    }
+}
+
+function AN_main() {
+    var r = AN_exportGeometry();
+    var title = "Illustrator Auto Nesting - Export Geometry\n\n";
+    if (r.status === "no_document") {
+        alert(title + "No document is open.");
+    } else if (r.status === "empty_selection") {
+        alert(title + "Select the groups to nest.\n" +
+              (r.skipped ? ("Skipped " + r.skipped + " selected objects that are not groups.\n") : "Nothing is selected.\n") +
+              "\nDiagnostics: " + r.diagnosticsPath);
+    } else if (r.status === "error") {
+        alert(title + "ERROR at step: " + r.step + "\n" + r.error +
+              "\n\nDiagnostics: " + r.diagnosticsPath +
+              "\nPlease send this diagnostics file when reporting the error.");
+    } else {
+        var g = r.geo;
+        alert(title +
+              "Selection: " + g.groups.length + " Groups\n" +
+              "Skipped (not groups): " + g.skipped_selection.length + "\n" +
+              "Artboard: " + g.artboard.name + "\n" +
+              "Bezier points: " + g.export_stats.points + "\n" +
+              "Export warnings: " + AN_countExportIssues(g) + "\n" +
+              "Time: " + g.export_stats.elapsed_ms + " ms\n\n" +
+              "Written: " + r.geometryPath + "\n" +
+              "Diagnostics: " + r.diagnosticsPath + "\n\n" +
+              "Next: use the AutoNesting panel (Nest), or drop geometry.json onto tools\\windows\\autonest_nest.cmd\n" +
+              "(tools\\windows\\autonest_analyze.cmd shows the silhouettes).");
+    }
+    return r;
+}

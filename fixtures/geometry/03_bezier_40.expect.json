@@ -1,0 +1,205 @@
+{
+ "global": {},
+ "groups": {
+  "g001": {
+   "status": "ok",
+   "has_curves": true,
+   "name": "B1"
+  },
+  "g002": {
+   "status": "ok",
+   "has_curves": true,
+   "name": "B2"
+  },
+  "g003": {
+   "status": "ok",
+   "has_curves": true,
+   "name": "B3"
+  },
+  "g004": {
+   "status": "ok",
+   "has_curves": true,
+   "name": "B4"
+  },
+  "g005": {
+   "status": "ok",
+   "has_curves": true,
+   "name": "B5"
+  },
+  "g006": {
+   "status": "ok",
+   "has_curves": true,
+   "name": "B6"
+  },
+  "g007": {
+   "status": "ok",
+   "has_curves": true,
+   "name": "B7"
+  },
+  "g008": {
+   "status": "ok",
+   "has_curves": true,
+   "name": "B8"
+  },
+  "g009": {
+   "status": "ok",
+   "has_curves": true,
+   "name": "B9"
+  },
+  "g010": {
+   "status": "ok",
+   "has_curves": true,
+   "name": "B10"
+  },
+  "g011": {
+   "status": "ok",
+   "has_curves": true,
+   "name": "B11"
+  },
+  "g012": {
+   "status": "ok",
+   "has_curves": true,
+   "name": "B12"
+  },
+  "g013": {
+   "status": "ok",
+   "has_curves": true,
+   "name": "B13"
+  },
+  "g014": {
+   "status": "ok",
+   "has_curves": true,
+   "name": "B14"
+  },
+  "g015": {
+   "status": "ok",
+   "has_curves": true,
+   "name": "B15"
+  },
+  "g016": {
+   "status": "ok",
+   "has_curves": true,
+   "name": "B16"
+  },
+  "g017": {
+   "status": "ok",
+   "has_curves": true,
+   "name": "B17"
+  },
+  "g018": {
+   "status": "ok",
+   "has_curves": true,
+   "name": "B18"
+  },
+  "g019": {
+   "status": "ok",
+   "has_curves": true,
+   "name": "B19"
+  },
+  "g020": {
+   "status": "ok",
+   "has_curves": true,
+   "name": "B20"
+  },
+  "g021": {
+   "status": "ok",
+   "has_curves": true,
+   "name": "B21"
+  },
+  "g022": {
+   "status": "ok",
+   "has_curves": true,
+   "name": "B22"
+  },
+  "g023": {
+   "status": "ok",
+   "has_curves": true,
+   "name": "B23"
+  },
+  "g024": {
+   "status": "ok",
+   "has_curves": true,
+   "name": "B24"
+  },
+  "g025": {
+   "status": "ok",
+   "has_curves": true,
+   "name": "B25"
+  },
+  "g026": {
+   "status": "ok",
+   "has_curves": true,
+   "name": "B26"
+  },
+  "g027": {
+   "status": "ok",
+   "has_curves": true,
+   "name": "B27"
+  },
+  "g028": {
+   "status": "ok",
+   "has_curves": true,
+   "name": "B28"
+  },
+  "g029": {
+   "status": "ok",
+   "has_curves": true,
+   "name": "B29"
+  },
+  "g030": {
+   "status": "ok",
+   "has_curves": true,
+   "name": "B30"
+  },
+  "g031": {
+   "status": "ok",
+   "has_curves": true,
+   "name": "B31"
+  },
+  "g032": {
+   "status": "ok",
+   "has_curves": true,
+   "name": "B32"
+  },
+  "g033": {
+   "status": "ok",
+   "has_curves": true,
+   "name": "B33"
+  },
+  "g034": {
+   "status": "ok",
+   "has_curves": true,
+   "name": "B34"
+  },
+  "g035": {
+   "status": "ok",
+   "has_curves": true,
+   "name": "B35"
+  },
+  "g036": {
+   "status": "ok",
+   "has_curves": true,
+   "name": "B36"
+  },
+  "g037": {
+   "status": "ok",
+   "has_curves": true,
+   "name": "B37"
+  },
+  "g038": {
+   "status": "ok",
+   "has_curves": true,
+   "name": "B38"
+  },
+  "g039": {
+   "status": "ok",
+   "has_curves": true,
+   "name": "B39"
+  },
+  "g040": {
+   "status": "ok",
+   "has_curves": true,
+   "name": "B40"
+  }
+ }
+}

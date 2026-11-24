@@ -1,0 +1,368 @@
+/*
+ * an_smoke.jsxinc - smoke test for a REAL Adobe Illustrator installation.
+ *
+ * Creates a NEW, unsaved test document (your own documents are not touched),
+ * draws 5 groups at known millimetre positions (L, U, L + island, clipping
+ * mask, compound ring), selects them, runs the real export code and checks
+ * the result against the known geometry.  It also probes rotate/translate on
+ * the test document (needed for Phase 4 Apply) and the cost of reading a
+ * large path.  Writes, in Documents/AutoNesting_SmokeTest:
+ *     geometry.json          export of the 5 groups (feed it to the Python engine)
+ *     smoke_expected.json    expected bounds/areas for tools/check_smoke.py
+ *     smoke_report.txt       PASS/FAIL list + environment
+ */
+var AN_Smoke = (function () {
+    var K = 72 / 25.4;      // pt per mm
+    var TOL_MM = 0.01;
+
+    function Report() {
+        this.rows = [];
+        this.pass = 0;
+        this.fail = 0;
+    }
+
+    /* fn returns {ok: boolean, detail: string}; exceptions count as FAIL with full details. */
+    Report.prototype.check = function (id, name, fn) {
+        var r;
+        try {
+            r = fn();
+        } catch (e) {
+            r = { ok: false, detail: "EXCEPTION " + AN_Diag.describe(e) };
+        }
+        if (r.ok) { this.pass++; } else { this.fail++; }
+        this.rows.push((r.ok ? "PASS " : "FAIL ") + id + "  " + name + " : " + r.detail);
+        return r.ok;
+    };
+
+    function r3(v) { return Math.round(v * 1000) / 1000; }
+
+    function Sheet(abRect) {
+        this.L = abRect[0];
+        this.T = abRect[1];
+        this.R = abRect[2];
+        this.B = abRect[3];
+    }
+    Sheet.prototype.X = function (xmm) { return this.L + xmm * K; };
+    Sheet.prototype.Y = function (ymm) { return this.B + ymm * K; };
+    Sheet.prototype.boundsMM = function (b) { // [l, t, r, b] pt -> [minx, miny, maxx, maxy] mm
+        return [r3((b[0] - this.L) / K), r3((b[3] - this.B) / K), r3((b[2] - this.L) / K), r3((b[1] - this.B) / K)];
+    };
+
+    function color() {
+        var c = new CMYKColor();
+        c.cyan = 70; c.magenta = 20; c.yellow = 0; c.black = 0;
+        return c;
+    }
+
+    function polyPath(container, sheet, ptsMM) {
+        var p = container.pathItems.add();
+        var arr = [];
+        for (var i = 0; i < ptsMM.length; i++) { arr.push([sheet.X(ptsMM[i][0]), sheet.Y(ptsMM[i][1])]); }
+        p.setEntirePath(arr);
+        p.closed = true;
+        p.filled = true;
+        p.stroked = false;
+        p.fillColor = color();
+        return p;
+    }
+
+    function ellipse(container, sheet, cx, cy, r) {
+        var p = container.pathItems.ellipse(sheet.Y(cy + r), sheet.X(cx - r), 2 * r * K, 2 * r * K);
+        p.filled = true;
+        p.stroked = false;
+        p.fillColor = color();
+        return p;
+    }
+
+    function maxDelta(a, b) {
+        var d = 0;
+        for (var i = 0; i < a.length; i++) { d = Math.max(d, Math.abs(a[i] - b[i])); }
+        return d;
+    }
+
+    function buildScene(doc, sheet) {
+        var layer = doc.activeLayer;
+        var groups = [];
+        var g;
+
+        g = layer.groupItems.add(); g.name = "SMOKE_L";
+        polyPath(g, sheet, [[20, 20], [110, 20], [110, 50], [50, 50], [50, 160], [20, 160]]);
+        groups.push({ item: g, bbox: [20, 20, 110, 160], area: 6000 });
+
+        g = layer.groupItems.add(); g.name = "SMOKE_U";
+        polyPath(g, sheet, [[140, 20], [240, 20], [240, 140], [215, 140], [215, 45], [165, 45], [165, 140], [140, 140]]);
+        groups.push({ item: g, bbox: [140, 20, 240, 140], area: 7250 });
+
+        g = layer.groupItems.add(); g.name = "SMOKE_L_ISLAND";
+        polyPath(g, sheet, [[270, 20], [330, 20], [330, 40], [290, 40], [290, 100], [270, 100]]);
+        polyPath(g, sheet, [[300, 60], [320, 60], [320, 80], [300, 80]]);
+        groups.push({ item: g, bbox: [270, 20, 330, 100], area: 2800 });
+
+        g = layer.groupItems.add(); g.name = "SMOKE_CLIP";
+        var content = g.pathItems.rectangle(sheet.Y(120), sheet.X(360), 100 * K, 100 * K);
+        content.filled = true; content.stroked = false; content.fillColor = color();
+        var clip = g.pathItems.ellipse(sheet.Y(110), sheet.X(370), 80 * K, 80 * K); // added on top
+        clip.filled = false; clip.stroked = false;
+        g.clipped = true;
+        groups.push({ item: g, bbox: [370, 30, 450, 110], ibox: [360, 20, 460, 120], area: Math.PI * 1600, curved: true });
+
+        g = layer.groupItems.add(); g.name = "SMOKE_RING";
+        var cp = g.compoundPathItems.add();
+        var outer = ellipse(cp, sheet, 520, 70, 45);
+        var inner = ellipse(cp, sheet, 520, 70, 20);
+        outer.evenodd = true; inner.evenodd = true;
+        groups.push({ item: g, bbox: [475, 25, 565, 115], area: Math.PI * (2025 - 400), curved: true });
+        return groups;
+    }
+
+    function selectOnly(doc, items) {
+        doc.selection = null;
+        for (var i = 0; i < items.length; i++) { items[i].selected = true; }
+    }
+
+    function run() {
+        var diag = AN_Diag.create("Smoke test");
+        var rep = new Report();
+        var outFolder = null;
+        var prevCS = app.coordinateSystem;
+        var doc = null, sheet = null, scene = null, geo = null, geoFile = null;
+
+        rep.check("C01", "create test document + read artboard", function () {
+            doc = app.documents.add(DocumentColorSpace.CMYK, 600 * K, 400 * K);
+            app.coordinateSystem = CoordinateSystem.DOCUMENTCOORDINATESYSTEM;
+            sheet = new Sheet(doc.artboards[0].artboardRect);
+            return { ok: true, detail: "artboardRect=[" + [sheet.L, sheet.T, sheet.R, sheet.B].join(", ") + "] pt" };
+        });
+        if (!doc) { return finish(diag, rep, null); }
+
+        rep.check("C02", "document y axis points up", function () {
+            return { ok: sheet.T > sheet.B, detail: "top=" + sheet.T + " bottom=" + sheet.B };
+        });
+
+        rep.check("C03", "build 5 test groups", function () {
+            scene = buildScene(doc, sheet);
+            return { ok: scene.length === 5, detail: scene.length + " groups" };
+        });
+        if (!scene) { app.coordinateSystem = prevCS; return finish(diag, rep, null); }
+
+        var items = [];
+        for (var i = 0; i < scene.length; i++) { items.push(scene[i].item); }
+        selectOnly(doc, items);
+        app.coordinateSystem = prevCS;
+
+        rep.check("C04", "export selected groups (real export code)", function () {
+            var cs = app.coordinateSystem;
+            app.coordinateSystem = CoordinateSystem.DOCUMENTCOORDINATESYSTEM;
+            try {
+                geo = AN_Extract.run(doc, AN_DEFAULT_SETTINGS, { version: app.version });
+            } finally {
+                app.coordinateSystem = cs;
+            }
+            return { ok: geo.groups.length === 5 && geo.skipped_selection.length === 0,
+                     detail: "groups=" + geo.groups.length + " skipped=" + geo.skipped_selection.length +
+                             " points=" + geo.export_stats.points + " ms=" + geo.export_stats.elapsed_ms };
+        });
+
+        rep.check("C05", "app.coordinateSystem restored", function () {
+            return { ok: String(app.coordinateSystem) === String(prevCS), detail: String(app.coordinateSystem) };
+        });
+
+        // Illustrator decides the order of doc.selection: match exported groups by name.
+        var byName = {};
+        if (geo) {
+            for (var n = 0; n < geo.groups.length; n++) { byName[geo.groups[n].name] = geo.groups[n]; }
+            for (var k = 0; k < scene.length; k++) {
+                (function (exp, g) {
+                    rep.check("C06." + (k + 1), "bounds of " + exp.item.name + " (mm from artboard bottom-left)", function () {
+                        if (!g) { return { ok: false, detail: "group not found in export" }; }
+                        var got = sheet.boundsMM(g.geometric_bounds_pt);
+                        var d = maxDelta(got, exp.bbox);
+                        var want = exp.bbox;
+                        // clip groups: either the clip path bounds or the clipped content bounds (both handled by the engine)
+                        if (exp.ibox && maxDelta(got, exp.ibox) < d) { d = maxDelta(got, exp.ibox); want = exp.ibox; }
+                        return { ok: d <= TOL_MM, detail: "got=[" + got.join(", ") + "] expected=[" + want.join(", ") +
+                                 "] max delta=" + r3(d) + " mm" };
+                    });
+                }(scene[k], byName[scene[k].item.name]));
+            }
+
+            rep.check("C07", "anchors and geometricBounds share one coordinate system", function () {
+                var g0 = byName.SMOKE_L;
+                var pts = g0.root.children[0].points;
+                var minx = 1e99, miny = 1e99, maxx = -1e99, maxy = -1e99;
+                for (var j = 0; j < pts.length; j++) {
+                    minx = Math.min(minx, pts[j][0]); maxx = Math.max(maxx, pts[j][0]);
+                    miny = Math.min(miny, pts[j][1]); maxy = Math.max(maxy, pts[j][1]);
+                }
+                var gb = g0.geometric_bounds_pt;
+                var d = maxDelta([minx, maxy, maxx, miny], gb);
+                return { ok: d <= 0.01, detail: "max delta=" + r3(d) + " pt" };
+            });
+
+            rep.check("C08", "clip group bounds = clip path or clipped content bounds", function () {
+                var gc = byName.SMOKE_CLIP;
+                var got = sheet.boundsMM(gc.geometric_bounds_pt);
+                var vis = sheet.boundsMM(gc.visible_bounds_pt);
+                var isClip = maxDelta(got, [370, 30, 450, 110]) <= TOL_MM;
+                var isContent = maxDelta(got, [360, 20, 460, 120]) <= TOL_MM;
+                return { ok: isClip || isContent,
+                         detail: (isClip ? "clip path bounds" : (isContent ? "clipped content bounds" : "neither")) +
+                                 ": geometric=[" + got.join(", ") + "] visible=[" + vis.join(", ") + "]" };
+            });
+
+            rep.check("C09", "PageItem.uuid + getPageItemFromUuid", function () {
+                var u = byName.SMOKE_L.uuid;
+                if (u === null) { return { ok: false, detail: "uuid not available in this Illustrator version" }; }
+                if (typeof doc.getPageItemFromUuid !== "function") {
+                    return { ok: false, detail: "uuid=" + u + " but getPageItemFromUuid is missing" };
+                }
+                var it = doc.getPageItemFromUuid(u);
+                return { ok: it && it.name === "SMOKE_L", detail: "uuid=" + u + " -> " + (it ? it.name : "null") };
+            });
+
+            rep.check("C10", "write + re-read geometry.json", function () {
+                outFolder = AN_IO.ensureFolder(new Folder(Folder.myDocuments.fsName + "/AutoNesting_SmokeTest"));
+                geoFile = AN_IO.writeText(new File(outFolder.fsName + "/geometry.json"), AN_JSON.stringify(geo));
+                var back = AN_JSON.parse(AN_IO.readText(geoFile));
+                return { ok: back.groups.length === 5, detail: geoFile.fsName };
+            });
+
+            rep.check("C11", "write expected values for tools/check_smoke.py", function () {
+                var exp = { schema: "autonest.smoke_expected/1", tolerance_mm: TOL_MM, groups: [] };
+                for (var j = 0; j < scene.length; j++) {
+                    exp.groups.push({ name: scene[j].item.name, bbox_mm: scene[j].bbox, area_mm2: scene[j].area,
+                                      curved: !!scene[j].curved });
+                }
+                var f = AN_IO.writeText(new File(outFolder.fsName + "/smoke_expected.json"), AN_JSON.stringify(exp));
+                return { ok: true, detail: f.fsName };
+            });
+        }
+
+        rep.check("C12", "Unicode folder name with spaces", function () {
+            var base = outFolder || AN_IO.ensureFolder(new Folder(Folder.myDocuments.fsName + "/AutoNesting_SmokeTest"));
+            var name = "th" + String.fromCharCode(0x1EED) + " nghi" + String.fromCharCode(0x1EC7) + "m " +
+                       String.fromCharCode(0x00F1);
+            var sub = AN_IO.ensureFolder(new Folder(base.fsName + "/" + name));
+            var text = "Vi" + String.fromCharCode(0x1EC7) + "t Nam " + String.fromCharCode(0x2713);
+            var f = AN_IO.writeText(new File(sub.fsName + "/unicode.txt"), text);
+            var back = AN_IO.readText(f);
+            return { ok: back === text, detail: f.fsName };
+        });
+
+        rep.check("C13", "read speed of a 5000-point path", function () {
+            var g = doc.activeLayer.groupItems.add();
+            g.name = "SMOKE_BIG";
+            var arr = [];
+            for (var j = 0; j < 5000; j++) {
+                var a = 2 * Math.PI * j / 5000;
+                arr.push([sheet.X(300 + 80 * Math.cos(a)), sheet.Y(270 + 80 * Math.sin(a))]);
+            }
+            var p = g.pathItems.add(), how = "setEntirePath";
+            try {
+                p.setEntirePath(arr);
+            } catch (eSet) {
+                // Illustrator 30.7 refused setEntirePath with 5000 points (Illegal Argument, 1220)
+                how = "pathPoints.add (setEntirePath: " + eSet.message + ")";
+                p.remove();
+                p = g.pathItems.add();
+                for (var q = 0; q < arr.length; q++) {
+                    var pp = p.pathPoints.add();
+                    pp.anchor = arr[q]; pp.leftDirection = arr[q]; pp.rightDirection = arr[q];
+                }
+            }
+            p.closed = true; p.filled = true; p.stroked = false;
+            selectOnly(doc, [g]);
+            var cs = app.coordinateSystem;
+            app.coordinateSystem = CoordinateSystem.DOCUMENTCOORDINATESYSTEM;
+            var t0 = new Date().getTime(), big;
+            try {
+                big = AN_Extract.run(doc, AN_DEFAULT_SETTINGS, {});
+            } finally {
+                app.coordinateSystem = cs;
+            }
+            var ms = new Date().getTime() - t0;
+            g.remove();
+            return { ok: big.groups.length === 1 && big.export_stats.points === 5000,
+                     detail: big.export_stats.points + " points in " + ms + " ms; built with " + how };
+        });
+
+        // ---- transform probes on the test document (input for Phase 4 Apply) ----
+        if (scene) {
+            var probe = scene[0].item;
+            var path0 = probe.pathItems[0];
+            var A0 = null, A1 = null, D = [10 * K, -5 * K];
+            rep.check("C14", "rotate(90) direction and pivot", function () {
+                var cs = app.coordinateSystem;
+                app.coordinateSystem = CoordinateSystem.DOCUMENTCOORDINATESYSTEM;
+                try {
+                    var gb = probe.geometricBounds;
+                    var C = [(gb[0] + gb[2]) / 2, (gb[1] + gb[3]) / 2];
+                    A0 = [path0.pathPoints[0].anchor[0], path0.pathPoints[0].anchor[1]];
+                    probe.rotate(90);
+                    A1 = [path0.pathPoints[0].anchor[0], path0.pathPoints[0].anchor[1]];
+                    var ccw = [C[0] - (A0[1] - C[1]), C[1] + (A0[0] - C[0])];
+                    var cw = [C[0] + (A0[1] - C[1]), C[1] - (A0[0] - C[0])];
+                    var dccw = maxDelta(A1, ccw), dcw = maxDelta(A1, cw);
+                    return { ok: dccw <= 0.01, detail: "counter-clockwise about bounds centre: delta=" + r3(dccw) +
+                             " pt (clockwise delta=" + r3(dcw) + " pt)" };
+                } finally {
+                    app.coordinateSystem = cs;
+                }
+            });
+            rep.check("C15", "translate() moves exactly", function () {
+                var cs = app.coordinateSystem;
+                app.coordinateSystem = CoordinateSystem.DOCUMENTCOORDINATESYSTEM;
+                try {
+                    probe.translate(D[0], D[1]);
+                    var A2 = [path0.pathPoints[0].anchor[0], path0.pathPoints[0].anchor[1]];
+                    var d = maxDelta(A2, [A1[0] + D[0], A1[1] + D[1]]);
+                    return { ok: d <= 0.001, detail: "delta=" + r3(d) + " pt" };
+                } finally {
+                    app.coordinateSystem = cs;
+                }
+            });
+            rep.check("C16", "rollback (inverse translate + rotate) returns to start", function () {
+                var cs = app.coordinateSystem;
+                app.coordinateSystem = CoordinateSystem.DOCUMENTCOORDINATESYSTEM;
+                try {
+                    probe.translate(-D[0], -D[1]);
+                    probe.rotate(-90);
+                    var A3 = [path0.pathPoints[0].anchor[0], path0.pathPoints[0].anchor[1]];
+                    var d = maxDelta(A3, A0);
+                    return { ok: d <= 0.01, detail: "delta=" + r3(d) + " pt" };
+                } finally {
+                    app.coordinateSystem = cs;
+                }
+            });
+        }
+        return finish(diag, rep, outFolder);
+    }
+
+    function finish(diag, rep, outFolder) {
+        var lines = ["Illustrator Auto Nesting - REAL ILLUSTRATOR SMOKE TEST",
+                     "PASS " + rep.pass + " / FAIL " + rep.fail, ""].concat(rep.rows);
+        lines.push("");
+        lines.push(diag.environment());
+        lines.push("");
+        lines.push("Next: run tools\\windows\\autonest_smoke_check.cmd (it analyses geometry.json and compares it with smoke_expected.json).");
+        var text = lines.join("\r\n");
+        var path = "(not written)";
+        try {
+            var folder = outFolder || AN_IO.ensureFolder(new Folder(Folder.myDocuments.fsName + "/AutoNesting_SmokeTest"));
+            path = AN_IO.writeText(new File(folder.fsName + "/smoke_report.txt"), text).fsName;
+        } catch (e) {
+            path = "(could not write report: " + AN_Diag.describe(e) + ")";
+        }
+        return { pass: rep.pass, fail: rep.fail, rows: rep.rows, reportPath: path, text: text };
+    }
+
+    return { run: run };
+}());
+
+function AN_smokeMain() {
+    var r = AN_Smoke.run();
+    alert("Auto Nesting smoke test\n\nPASS " + r.pass + " / FAIL " + r.fail + "\n\n" +
+          r.rows.join("\n").substr(0, 1500) + "\n\nReport: " + r.reportPath +
+          "\n\nThe test document can be closed without saving.");
+    return r;
+}

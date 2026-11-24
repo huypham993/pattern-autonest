@@ -1,0 +1,131 @@
+{
+ "version": "0.4.0",
+ "files": {
+  "Illustrator_AutoNesting_Standalone.jsx": {
+   "sha256": "86567ec0b04c910168985fa07d11134cad0789500896e7f2d7b1f4f5c1cab9c4",
+   "bytes": 38653,
+   "sources": [
+    {
+     "file": "jsx/lib/an_json.jsxinc",
+     "sha256": "b96487cfd4e2326bcbc27b2a48b42e119bde6235d1f7d2d309bd8985de800c17"
+    },
+    {
+     "file": "jsx/lib/an_extract.jsxinc",
+     "sha256": "2c0ba13d08e3ab10ff1cc3518cbef800f1dd0a37f2e008bdba8e5a9f1b9bb3d1"
+    },
+    {
+     "file": "jsx/lib/an_io.jsxinc",
+     "sha256": "839e8c39117efb7080faf0f9c514d556d395cd849a6bb1afc1eda3e713651df2"
+    },
+    {
+     "file": "jsx/lib/an_main.jsxinc",
+     "sha256": "adcfaa6dfc58edf7e38dfaf5c750835be4d83ec00571c75af5db0399087d1c97"
+    }
+   ]
+  },
+  "AutoNesting_SmokeTest_Standalone.jsx": {
+   "sha256": "ae02946ff3e342eb63226e1212f741c9526d4d5be1d07b3cb9ccd21e679365ed",
+   "bytes": 57067,
+   "sources": [
+    {
+     "file": "jsx/lib/an_json.jsxinc",
+     "sha256": "b96487cfd4e2326bcbc27b2a48b42e119bde6235d1f7d2d309bd8985de800c17"
+    },
+    {
+     "file": "jsx/lib/an_extract.jsxinc",
+     "sha256": "2c0ba13d08e3ab10ff1cc3518cbef800f1dd0a37f2e008bdba8e5a9f1b9bb3d1"
+    },
+    {
+     "file": "jsx/lib/an_io.jsxinc",
+     "sha256": "839e8c39117efb7080faf0f9c514d556d395cd849a6bb1afc1eda3e713651df2"
+    },
+    {
+     "file": "jsx/lib/an_main.jsxinc",
+     "sha256": "adcfaa6dfc58edf7e38dfaf5c750835be4d83ec00571c75af5db0399087d1c97"
+    },
+    {
+     "file": "jsx/lib/an_smoke.jsxinc",
+     "sha256": "7eda75c4ff2039a7407a4136711c3b700188ae98c6bda367e3d2a6efb6433f5e"
+    }
+   ]
+  },
+  "AutoNesting_Apply_Standalone.jsx": {
+   "sha256": "68317b973b99a67a9382b2c23b4c6c86963f72c8509a38061074134517eada6f",
+   "bytes": 59383,
+   "sources": [
+    {
+     "file": "jsx/lib/an_json.jsxinc",
+     "sha256": "b96487cfd4e2326bcbc27b2a48b42e119bde6235d1f7d2d309bd8985de800c17"
+    },
+    {
+     "file": "jsx/lib/an_extract.jsxinc",
+     "sha256": "2c0ba13d08e3ab10ff1cc3518cbef800f1dd0a37f2e008bdba8e5a9f1b9bb3d1"
+    },
+    {
+     "file": "jsx/lib/an_io.jsxinc",
+     "sha256": "839e8c39117efb7080faf0f9c514d556d395cd849a6bb1afc1eda3e713651df2"
+    },
+    {
+     "file": "jsx/lib/an_apply.jsxinc",
+     "sha256": "ad2b39e527292917d49be16b003343902a551d531c676c732df0ec86f1bfb5e5"
+    }
+   ]
+  },
+  "AutoNesting_PlaceLabels_Standalone.jsx": {
+   "sha256": "8f7366e93b05b8b540e1bbe6b2dc49870c5da2fe8ade2ce6506b637b88811566",
+   "bytes": 90794,
+   "sources": [
+    {
+     "file": "jsx/lib/an_json.jsxinc",
+     "sha256": "b96487cfd4e2326bcbc27b2a48b42e119bde6235d1f7d2d309bd8985de800c17"
+    },
+    {
+     "file": "jsx/lib/an_extract.jsxinc",
+     "sha256": "2c0ba13d08e3ab10ff1cc3518cbef800f1dd0a37f2e008bdba8e5a9f1b9bb3d1"
+    },
+    {
+     "file": "jsx/lib/an_io.jsxinc",
+     "sha256": "839e8c39117efb7080faf0f9c514d556d395cd849a6bb1afc1eda3e713651df2"
+    },
+    {
+     "file": "jsx/lib/an_labels.jsxinc",
+     "sha256": "5d6d19a1ed730691790678b5854ae4633360c07022ed5e96b801a111a2091764"
+    }
+   ]
+  },
+  "AutoNesting_PanelHost.jsx": {
+   "sha256": "4b8e21d292c4cc30f8caad3aef528cdad66583534aa026ecbc2356395e6b46cc",
+   "bytes": 132508,
+   "sources": [
+    {
+     "file": "jsx/lib/an_json.jsxinc",
+     "sha256": "b96487cfd4e2326bcbc27b2a48b42e119bde6235d1f7d2d309bd8985de800c17"
+    },
+    {
+     "file": "jsx/lib/an_extract.jsxinc",
+     "sha256": "2c0ba13d08e3ab10ff1cc3518cbef800f1dd0a37f2e008bdba8e5a9f1b9bb3d1"
+    },
+    {
+     "file": "jsx/lib/an_io.jsxinc",
+     "sha256": "839e8c39117efb7080faf0f9c514d556d395cd849a6bb1afc1eda3e713651df2"
+    },
+    {
+     "file": "jsx/lib/an_main.jsxinc",
+     "sha256": "adcfaa6dfc58edf7e38dfaf5c750835be4d83ec00571c75af5db0399087d1c97"
+    },
+    {
+     "file": "jsx/lib/an_apply.jsxinc",
+     "sha256": "ad2b39e527292917d49be16b003343902a551d531c676c732df0ec86f1bfb5e5"
+    },
+    {
+     "file": "jsx/lib/an_panel.jsxinc",
+     "sha256": "f4cef1ab4ea2a50a061f8bf713e74703a032a44802b64eceefd7ac5b5b3aee45"
+    },
+    {
+     "file": "jsx/lib/an_labels.jsxinc",
+     "sha256": "5d6d19a1ed730691790678b5854ae4633360c07022ed5e96b801a111a2091764"
+    }
+   ]
+  }
+ }
+}
