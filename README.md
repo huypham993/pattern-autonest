@@ -134,3 +134,7 @@ JSX source rules, enforced by the build:
 - No `JSON`, no ES5 array methods, no `String.prototype.trim`, no `Object.keys`.
 
 The Node harness runs the real JSX code on a mock DOM, which does not replace a run in real Illustrator.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
